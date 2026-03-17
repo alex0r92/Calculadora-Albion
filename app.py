@@ -3,26 +3,26 @@ import requests
 import math
 
 # ==========================================
-# 1. BASE DE DATOS MAESTRA (Verificada)
+# 1. BASE DE DATOS MAESTRA (Corregida)
 # ==========================================
 ALBION_DB = {
     "bonos_ciudad": {
         "Lymhurst": ["T4_BURDOCK"],
         "Bridgewatch": ["T5_TEASEL"],
         "Martlock": ["T6_FOXGLOVE"],
-        "Thetford": ["T7_MULLEN", "T2_AGARIC"],
+        "Thetford": ["T7_MULLEIN", "T2_AGARIC"],
         "Fort Sterling": ["T8_YARROW"],
-        "Caerleon": ["T3_COMFREY", "T5_TEASEL", "T7_MULLEN"],
+        "Caerleon": ["T3_COMFREY", "T5_TEASEL", "T7_MULLEIN"],
         "Brecilien": [] 
     },
     "hierbas": {
-        "T2_AGARIC": {"seed": "T2_SEED_AGARIC", "return_base": 0.333},
-        "T3_COMFREY": {"seed": "T3_SEED_COMFREY", "return_base": 0.600},
-        "T4_BURDOCK": {"seed": "T4_SEED_BURDOCK", "return_base": 0.733},
-        "T5_TEASEL": {"seed": "T5_SEED_TEASEL", "return_base": 0.800},
-        "T6_FOXGLOVE": {"seed": "T6_SEED_FOXGLOVE", "return_base": 0.866},
-        "T7_MULLEN": {"seed": "T7_SEED_MULLEN", "return_base": 0.911},
-        "T8_YARROW": {"seed": "T8_SEED_YARROW", "return_base": 0.933}
+        "T2_AGARIC": {"seed": "T2_FARM_AGARIC_SEED", "return_base": 0.333},
+        "T3_COMFREY": {"seed": "T3_FARM_COMFREY_SEED", "return_base": 0.600},
+        "T4_BURDOCK": {"seed": "T4_FARM_BURDOCK_SEED", "return_base": 0.733},
+        "T5_TEASEL": {"seed": "T5_FARM_TEASEL_SEED", "return_base": 0.800},
+        "T6_FOXGLOVE": {"seed": "T6_FARM_FOXGLOVE_SEED", "return_base": 0.866},
+        "T7_MULLEIN": {"seed": "T7_FARM_MULLEIN_SEED", "return_base": 0.911},
+        "T8_YARROW": {"seed": "T8_FARM_YARROW_SEED", "return_base": 0.933}
     },
     "recetas": {
         "Curación Menor (T2)": {"id_base": "T2_POTION_HEAL", "tier_extracto": "T4", "rama": "Curación", "foco_base": 150, "mats": {"T2_AGARIC": 8}}, 
@@ -34,10 +34,10 @@ ALBION_DB = {
         "Gigantismo (T5)": {"id_base": "T5_POTION_REVIVE", "tier_extracto": "T6", "rama": "Gigantismo", "foco_base": 1648, "mats": {"T5_TEASEL": 24, "T4_BURDOCK": 12, "T5_EGG": 6}},
         "Curación Mayor (T6)": {"id_base": "T6_POTION_HEAL", "tier_extracto": "T6", "rama": "Curación", "foco_base": 1648, "mats": {"T6_FOXGLOVE": 72, "T3_EGG": 18, "T1_ALCOHOL": 18}},
         "Veneno (T6)": {"id_base": "T6_POTION_COOLDOWN", "tier_extracto": "T6", "rama": "Veneno", "foco_base": 1648, "mats": {"T6_FOXGLOVE": 24, "T5_TEASEL": 12, "T3_EGG": 6}},
-        "Gigantismo Mayor (T7)": {"id_base": "T7_POTION_REVIVE", "tier_extracto": "T8", "rama": "Gigantismo", "foco_base": 2736, "mats": {"T7_MULLEN": 72, "T6_FOXGLOVE": 36, "T5_EGG": 18, "T7_ALCOHOL": 18}},
-        "Resistencia Mayor (T7)": {"id_base": "T7_POTION_STONESKIN", "tier_extracto": "T8", "rama": "Resistencia", "foco_base": 2736, "mats": {"T7_MULLEN": 72, "T6_FOXGLOVE": 36, "T5_EGG": 18, "T7_ALCOHOL": 18}},
-        "Veneno Mayor (T8)": {"id_base": "T8_POTION_COOLDOWN", "tier_extracto": "T8", "rama": "Veneno", "foco_base": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEN": 36, "T5_TEASEL": 36, "T6_MILK": 18, "T8_ALCOHOL": 18}},
-        "Invisibilidad (T8)": {"id_base": "T8_POTION_INVISIBILITY", "tier_extracto": "T8", "rama": "Invisibilidad", "foco_base": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEN": 36, "T5_TEASEL": 36, "T6_MILK": 18, "T8_ALCOHOL": 18}}
+        "Gigantismo Mayor (T7)": {"id_base": "T7_POTION_REVIVE", "tier_extracto": "T8", "rama": "Gigantismo", "foco_base": 2736, "mats": {"T7_MULLEIN": 72, "T6_FOXGLOVE": 36, "T5_EGG": 18, "T7_ALCOHOL": 18}},
+        "Resistencia Mayor (T7)": {"id_base": "T7_POTION_STONESKIN", "tier_extracto": "T8", "rama": "Resistencia", "foco_base": 2736, "mats": {"T7_MULLEIN": 72, "T6_FOXGLOVE": 36, "T5_EGG": 18, "T7_ALCOHOL": 18}},
+        "Veneno Mayor (T8)": {"id_base": "T8_POTION_COOLDOWN", "tier_extracto": "T8", "rama": "Veneno", "foco_base": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T5_TEASEL": 36, "T6_MILK": 18, "T8_ALCOHOL": 18}},
+        "Invisibilidad (T8)": {"id_base": "T8_POTION_INVISIBILITY", "tier_extracto": "T8", "rama": "Invisibilidad", "foco_base": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T5_TEASEL": 36, "T6_MILK": 18, "T8_ALCOHOL": 18}}
     }
 }
 
@@ -46,13 +46,20 @@ ALBION_DB = {
 # ==========================================
 @st.cache_data(ttl=60)
 def obtener_precios(lista_ids, ciudad):
-    # Evitar peticiones vacías
     if not lista_ids: return {}
     url = f"https://www.albion-online-data.com/api/v2/stats/prices/{','.join(lista_ids)}?locations={ciudad}"
     try:
-        data = requests.get(url, timeout=5).json()
-        return {item['item_id']: item['sell_price_min'] for item in data}
-    except:
+        data = requests.get(url, timeout=10)
+        if data.status_code == 200:
+            return {item['item_id']: item['sell_price_min'] for item in data.json()}
+        else:
+            st.error(f"Error interno del servidor de Albion API. Código: {data.status_code}")
+            return {}
+    except requests.exceptions.Timeout:
+        st.error("⏱️ La conexión a la API de Albion ha caducado. El servidor comunitario está saturado en este instante.")
+        return {}
+    except Exception as e:
+        st.error(f"⚠️ Error de red desconocido: {e}")
         return {}
 
 # ==========================================
@@ -70,14 +77,23 @@ tasa_nutricion = st.sidebar.number_input("Tasa de Nutrición (Tienda)", value=34
 
 st.sidebar.subheader("Destiny Board (Niveles)")
 spec_base = st.sidebar.slider("Alquimista (Base)", 0, 100, 100)
-with st.sidebar.expander("Ramas de Pociones"):
+with st.sidebar.expander("Ramas de Pociones (Las 14 specs)"):
+    st.markdown("Ajusta tus niveles para el cálculo exacto de Foco:")
     specs_usuario = {
         "Curación": st.slider("Curación", 0, 100, 0),
         "Energía": st.slider("Energía", 0, 100, 0),
         "Gigantismo": st.slider("Gigantismo", 0, 100, 0),
         "Resistencia": st.slider("Resistencia", 0, 100, 0),
+        "Pegajosa": st.slider("Pegajosa", 0, 100, 0),
         "Invisibilidad": st.slider("Invisibilidad", 0, 100, 0),
-        "Veneno": st.slider("Veneno", 0, 100, 0)
+        "Veneno": st.slider("Veneno", 0, 100, 0),
+        "Limpieza": st.slider("Limpieza", 0, 100, 0),
+        "Ácido": st.slider("Ácido", 0, 100, 0),
+        "Calmante": st.slider("Calmante", 0, 100, 0),
+        "Recolección": st.slider("Recolección", 0, 100, 0),
+        "Fuego Infernal": st.slider("Fuego Infernal", 0, 100, 0),
+        "Berserker": st.slider("Berserker", 0, 100, 0),
+        "Tornado": st.slider("Tornado", 0, 100, 0)
     }
 
 # --- PESTAÑAS ---
@@ -98,7 +114,6 @@ with tab1:
         id_semilla = ALBION_DB["hierbas"][hierba_elegida]["seed"]
         precios_granja = obtener_precios([hierba_elegida, id_semilla], ciudad)
         
-        # Bono de ciudad
         bono_local = 1.1 if hierba_elegida in ALBION_DB["bonos_ciudad"].get(ciudad, []) else 1.0
         
         huecos_totales = parcelas * 9
@@ -136,10 +151,8 @@ with tab2:
         receta = ALBION_DB["recetas"][pocion_alq]
         crafteos = math.ceil(cantidad_alq / 5)
         
-        # ID final con encantamiento
         id_final = receta["id_base"] if encantamiento_alq == 0 else f"{receta['id_base']}@{encantamiento_alq}"
         
-        # Preparar lista de materiales reales a comprar
         mats_necesarios = receta["mats"].copy()
         if encantamiento_alq > 0:
             mats_necesarios[f"{receta['tier_extracto']}_ARCANE_EXTRACT"] = 18 * encantamiento_alq
@@ -152,7 +165,6 @@ with tab2:
             mat_real = math.ceil((cant * crafteos) * (1 - rrr_alq))
             coste_materiales += mat_real * precios.get(mat, 0)
             
-        # Cálculo Foco
         rama_actual = receta["rama"]
         spec_especifica = specs_usuario.get(rama_actual, 0)
         spec_otras = sum(valor for rama, valor in specs_usuario.items() if rama != rama_actual)
@@ -188,12 +200,10 @@ with tab3:
         crafteos_est = math.ceil(meta_est / 5)
         id_final_est = receta_est["id_base"] if encantamiento_est == 0 else f"{receta_est['id_base']}@{encantamiento_est}"
         
-        # Preparar materiales
         mats_est = receta_est["mats"].copy()
         if encantamiento_est > 0:
             mats_est[f"{receta_est['tier_extracto']}_ARCANE_EXTRACT"] = 18 * encantamiento_est
             
-        # Recopilar todos los IDs (Final, mats, y semillas de los mats si son hierbas)
         ids_est = [id_final_est] + list(mats_est.keys())
         for mat in mats_est.keys():
             if mat in ALBION_DB["hierbas"]:
@@ -201,7 +211,6 @@ with tab3:
                 
         precios_est = obtener_precios(ids_est, ciudad)
         
-        # Separar costes
         coste_comprar_todo = 0
         coste_autosuficiente = 0
         
@@ -212,25 +221,5 @@ with tab3:
             coste_comprar_todo += mat_real * precio_mercado
             
             if mat in ALBION_DB["hierbas"]:
-                # Logística de plantar esta hierba
                 bono_local = 1.1 if mat in ALBION_DB["bonos_ciudad"].get(ciudad, []) else 1.0
-                plantas_por_parcela = math.floor(81 * bono_local)
-                parcelas_nec = math.ceil(mat_real / plantas_por_parcela)
-                semillas_perdidas = math.ceil((parcelas_nec * 9) * (1 - ALBION_DB["hierbas"][mat]["return_base"]))
-                coste_reposicion = semillas_perdidas * precios_est.get(ALBION_DB["hierbas"][mat]["seed"], 0)
-                
-                coste_autosuficiente += coste_reposicion
-                st.write(f"- **{mat}**: Necesitas {mat_real} uds. (Si lo plantas: {parcelas_nec} parcelas activas. Reponer semillas cuesta {coste_reposicion:,.0f} silver).")
-            else:
-                # Si no es hierba (leche, extracto), hay que comprarlo en ambas rutas
-                coste_autosuficiente += mat_real * precio_mercado
-                st.write(f"- **{mat}**: Comprar {mat_real} uds. cuesta {mat_real * precio_mercado:,.0f} silver.")
-
-        ingreso_est = meta_est * precios_est.get(id_final_est, 0) * (1 - tax_mercado)
-        beneficio_ruta_a = ingreso_est - coste_comprar_todo
-        beneficio_ruta_b = ingreso_est - coste_autosuficiente
-        
-        st.markdown("---")
-        col_resA, col_resB = st.columns(2)
-        col_resA.metric("Ruta A: Comprar todo en mercado", f"{beneficio_ruta_a:,.0f} silver")
-        col_resB.metric("Ruta B: Autosuficiencia (Plantar hierbas)", f"{beneficio_ruta_b:,.0f} silver", delta=f"{beneficio_ruta_b - beneficio_ruta_a:,.0f} vs Ruta A")
+                plantas_por_
