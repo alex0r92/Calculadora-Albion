@@ -3,28 +3,42 @@ import requests
 import math
 
 # ==========================================
-# 1. BASE DE DATOS INTERNA (Diccionario)
+# 1. BASE DE DATOS MAESTRA (Albion Online)
 # ==========================================
 ALBION_DB = {
     "hierbas": {
-        "T4_HERB_BURDOCK": {"seed": "T4_SEED_BURDOCK", "return_prem": 0.811},
-        "T5_HERB_TEASEL": {"seed": "T5_SEED_TEASEL", "return_prem": 0.844},
-        "T6_HERB_FOXGLOVE": {"seed": "T6_SEED_FOXGLOVE", "return_prem": 0.888},
-        "T7_HERB_MULLEN": {"seed": "T7_SEED_MULLEN", "return_prem": 0.911},
-        "T8_HERB_COMFREY": {"seed": "T8_SEED_COMFREY", "return_prem": 0.933}
+        "T2_AGARIC": {"seed": "T2_SEED_AGARIC", "return_base": 0.333},
+        "T3_COMFREY": {"seed": "T3_SEED_COMFREY", "return_base": 0.600},
+        "T4_BURDOCK": {"seed": "T4_SEED_BURDOCK", "return_base": 0.733},
+        "T5_TEASEL": {"seed": "T5_SEED_TEASEL", "return_base": 0.800},
+        "T6_FOXGLOVE": {"seed": "T6_SEED_FOXGLOVE", "return_base": 0.866},
+        "T7_MULLEN": {"seed": "T7_SEED_MULLEN", "return_base": 0.911},
+        "T8_YARROW": {"seed": "T8_SEED_YARROW", "return_base": 0.933}
     },
     "recetas": {
-        "Gigantismo T7": {
-            "id_final": "T7_POTION_GROWTH",
-            "mats": {"T7_HERB_MULLEN": 72, "T6_HERB_FOXGLOVE": 36, "T5_EGG": 18, "T7_ALCOHOL": 18}
-        },
-        "Veneno T4": {
+        "Veneno T4 (Menor)": {
             "id_final": "T4_POTION_COOLDOWN",
-            "mats": {"T4_HERB_BURDOCK": 24, "T2_AGARIC": 12}
+            "mats": {"T4_BURDOCK": 8, "T3_COMFREY": 4}
         },
-        "Curación T6": {
+        "Curación T4": {
+            "id_final": "T4_POTION_HEAL",
+            "mats": {"T4_BURDOCK": 24, "T2_AGARIC": 12}
+        },
+        "Curación T6 (Mayor)": {
             "id_final": "T6_POTION_HEAL",
-            "mats": {"T6_HERB_FOXGLOVE": 36, "T5_HERB_TEASEL": 18, "T3_EGG": 9}
+            "mats": {"T6_FOXGLOVE": 72, "T3_EGG": 18, "T1_ALCOHOL": 18} # Ingredientes base ajustados a su equivalente en mercado
+        },
+        "Gigantismo T7 (Mayor)": {
+            "id_final": "T7_POTION_GROWTH",
+            "mats": {"T7_MULLEN": 72, "T6_FOXGLOVE": 36, "T5_EGG": 18, "T7_ALCOHOL": 18} # T7_ALCOHOL es Corn Hooch
+        },
+        "Veneno T8 (Mayor)": {
+            "id_final": "T8_POTION_COOLDOWN",
+            "mats": {"T8_YARROW": 72, "T7_MULLEN": 36, "T5_TEASEL": 36, "T6_MILK": 18, "T8_ALCOHOL": 18} # T8_ALCOHOL es Pumpkin Moonshine
+        },
+        "Invisibilidad T8": {
+            "id_final": "T8_POTION_INVISIBILITY",
+            "mats": {"T8_YARROW": 72, "T7_MULLEN": 36, "T5_TEASEL": 36, "T6_MILK": 18, "T8_ALCOHOL": 18}
         }
     }
 }
@@ -32,7 +46,7 @@ ALBION_DB = {
 # ==========================================
 # 2. CONECTOR A LA API
 # ==========================================
-@st.cache_data(ttl=300) # Guarda los precios 5 minutos para no saturar la API
+@st.cache_data(ttl=60) # Actualiza precios cada minuto para no saturar
 def obtener_precios(lista_ids, ciudad):
     url = f"https://www.albion-online-data.com/api/v2/stats/prices/{','.join(lista_ids)}?locations={ciudad}"
     try:
@@ -44,13 +58,13 @@ def obtener_precios(lista_ids, ciudad):
 # ==========================================
 # 3. INTERFAZ GRÁFICA Y LÓGICA
 # ==========================================
-st.set_page_config(page_title="Albion CEO - Planner", layout="wide")
+st.set_page_config(page_title="Albion Planner", layout="wide")
 st.title("🧪 Planificador Logístico de Alquimia")
 
-# --- PANEL LATERAL (Inputs del Usuario) ---
+# --- PANEL LATERAL ---
 st.sidebar.header("Tus Parámetros")
 ciudad = st.sidebar.selectbox("Ciudad de crafteo", ["Brecilien", "Martlock", "Caerleon", "Lymhurst"])
-premium = st.sidebar.checkbox("Premium Activo", value=True)
+premium = st.sidebar.checkbox("Premium Activo (Afecta Impuestos)", value=True)
 tax_mercado = 0.065 if premium else 0.10
 
 st.sidebar.subheader("Niveles de Foco")
@@ -59,11 +73,11 @@ spec_pocion = st.sidebar.slider("Spec Poción Elegida", 0, 100, 35)
 spec_otras = st.sidebar.number_input("Suma de otras Specs", 0, 1400, 50)
 
 st.sidebar.subheader("Opciones de Tienda")
-tasa_nutricion = st.sidebar.number_input("Tasa de Nutrición (Tienda)", value=345)
+tasa_nutricion = st.sidebar.number_input("Tasa de Nutrición", value=345)
 usar_foco = st.sidebar.checkbox("Craftear con Foco (RRR 48.2%)", value=True)
 rrr = 0.482 if usar_foco else 0.248
 
-# --- PANEL CENTRAL (Cálculo Inverso) ---
+# --- PANEL CENTRAL ---
 st.subheader("🎯 Tu Meta de Producción")
 col1, col2 = st.columns(2)
 with col1:
@@ -75,7 +89,6 @@ if st.button("🚀 Calcular Logística y Rentabilidad", type="primary"):
     receta = ALBION_DB["recetas"][pocion_elegida]
     crafteos_necesarios = math.ceil(meta_pociones / 5)
     
-    # Recopilar todos los IDs para la API
     ids_a_buscar = [receta["id_final"]]
     for mat, cant in receta["mats"].items():
         ids_a_buscar.append(mat)
@@ -85,50 +98,41 @@ if st.button("🚀 Calcular Logística y Rentabilidad", type="primary"):
     precios = obtener_precios(ids_a_buscar, ciudad)
     
     if not precios:
-        st.error("Error conectando a la API de Albion Data. Inténtalo en unos segundos.")
+        st.error("Error de conexión. Albion Data Project puede estar saturado. Intenta de nuevo en 5 seg.")
     else:
-        st.success("✅ Precios actualizados en tiempo real.")
+        st.success("✅ Precios sincronizados con la API de Albion.")
         
-        # --- LÓGICA MATEMÁTICA ---
-        st.markdown("### 📋 Lista de la Compra y Logística de Islas")
-        
+        st.markdown("### 📋 Lista de la Compra y Logística")
         coste_total_materiales = 0
         
         for mat, cant_base in receta["mats"].items():
-            # Material real necesario descontando el Retorno de Recursos (RRR)
             mat_real_necesario = math.ceil((cant_base * crafteos_necesarios) * (1 - rrr))
             precio_mat = precios.get(mat, 0)
             coste_total_materiales += mat_real_necesario * precio_mat
             
-            # Si es una hierba, calculamos las parcelas
             if mat in ALBION_DB["hierbas"]:
-                plantas_por_parcela = 81 # 9 huecos * 9 plantas (media)
+                plantas_por_parcela = 81 # Asumiendo Premium (rinde el doble)
                 parcelas_necesarias = math.ceil(mat_real_necesario / plantas_por_parcela)
-                
-                # Pérdida de semillas
-                semillas_perdidas = (parcelas_necesarias * 9) * (1 - ALBION_DB["hierbas"][mat]["return_prem"])
+                semillas_perdidas = (parcelas_necesarias * 9) * (1 - ALBION_DB["hierbas"][mat]["return_base"])
                 coste_reposicion = semillas_perdidas * precios.get(ALBION_DB["hierbas"][mat]["seed"], 0)
                 
-                st.info(f"🌱 **{mat}**: Necesitas **{mat_real_necesario}** unidades. \n\n"
-                        f"👉 Para cultivarlo tú mismo necesitas mantener **{parcelas_necesarias} parcelas**. \n\n"
-                        f"👉 Coste de reponer las semillas que mueran: **{coste_reposicion:,.0f} silver**.")
+                st.info(f"🌱 **{mat}**: Necesitas **{mat_real_necesario}** uds. (Precio API: {precio_mat} silv/ud)\n\n"
+                        f"👉 Necesitas mantener **{parcelas_necesarias} parcelas**.\n\n"
+                        f"👉 Coste de reponer semillas: **{coste_reposicion:,.0f} silver**.")
             else:
-                st.warning(f"🛒 **{mat}** (Comprar en mercado): Necesitas **{mat_real_necesario}** unidades. Coste: **{mat_real_necesario * precio_mat:,.0f} silver**.")
+                st.warning(f"🛒 **{mat}**: Necesitas **{mat_real_necesario}** uds. (Precio API: {precio_mat} silv/ud). Coste: **{mat_real_necesario * precio_mat:,.0f} silver**.")
 
-        # --- RENTABILIDAD Y FOCO ---
         st.markdown("### 💰 Resumen Financiero")
         ingreso_bruto = meta_pociones * precios.get(receta["id_final"], 0)
         ingreso_neto = ingreso_bruto * (1 - tax_mercado)
         
-        # Cálculo de Foco
         eficiencia = (spec_base * 30) + (spec_pocion * 250) + (spec_otras * 18)
         coste_foco_click = 4650 * (0.5 ** (eficiencia / 10000))
         foco_total = coste_foco_click * crafteos_necesarios
-        
         beneficio_limpio = ingreso_neto - coste_total_materiales
         
         col_res1, col_res2, col_res3 = st.columns(3)
-        col_res1.metric("Valor de las Pociones", f"{ingreso_neto:,.0f} silver")
+        col_res1.metric(f"Valor en Mercado ({precios.get(receta['id_final'], 0)} ud)", f"{ingreso_neto:,.0f} silver")
         col_res2.metric("Beneficio Neto", f"{beneficio_limpio:,.0f} silver")
         col_res3.metric("Foco Necesario", f"{foco_total:,.0f} pts")
         
