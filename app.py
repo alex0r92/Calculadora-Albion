@@ -7,13 +7,9 @@ import math
 # ==========================================
 ALBION_DB = {
     "bonos_ciudad": {
-        "Lymhurst": ["T4_BURDOCK"],
-        "Bridgewatch": ["T5_TEASEL"],
-        "Martlock": ["T6_FOXGLOVE"],
-        "Thetford": ["T7_MULLEIN", "T2_AGARIC"],
-        "Fort_Sterling": ["T8_YARROW"],
-        "Caerleon": ["T3_COMFREY", "T5_TEASEL", "T7_MULLEIN"],
-        "Brecilien": [] 
+        "Lymhurst": ["T4_BURDOCK"], "Bridgewatch": ["T5_TEASEL"], "Martlock": ["T6_FOXGLOVE"],
+        "Thetford": ["T7_MULLEIN", "T2_AGARIC"], "Fort_Sterling": ["T8_YARROW"],
+        "Caerleon": ["T3_COMFREY", "T5_TEASEL", "T7_MULLEIN"], "Brecilien": [] 
     },
     "hierbas": {
         "T2_AGARIC": {"seed": "T2_FARM_AGARIC_SEED", "return_base": 0.333},
@@ -54,13 +50,10 @@ def obtener_precios_globales(lista_ids):
         if data.status_code == 200:
             resultados = {}
             for item in data.json():
-                ciudad_item = item['city']
-                if ciudad_item == "Fort Sterling": ciudad_item = "Fort_Sterling" 
-                
+                ciudad_item = "Fort_Sterling" if item['city'] == "Fort Sterling" else item['city']
                 item_id = item['item_id']
                 if item['sell_price_min'] > 0 or item['buy_price_max'] > 0:
-                    if item_id not in resultados:
-                        resultados[item_id] = {}
+                    if item_id not in resultados: resultados[item_id] = {}
                     resultados[item_id][ciudad_item] = {
                         "sell_min": item['sell_price_min'],
                         "buy_max": item['buy_price_max']
@@ -78,10 +71,9 @@ def obtener_historial_24h(item_id, ciudad):
         if data.status_code == 200 and len(data.json()) > 0:
             historial = data.json()[0].get('data', [])
             if historial:
-                ultimo_dato = historial[-1]
                 return {
-                    "precio_medio": ultimo_dato.get('average_price', 0),
-                    "volumen": ultimo_dato.get('item_count', 0)
+                    "precio_medio": historial[-1].get('average_price', 0),
+                    "volumen": historial[-1].get('item_count', 0)
                 }
         return {"precio_medio": 0, "volumen": 0}
     except:
@@ -103,21 +95,14 @@ st.sidebar.subheader("Specs de Alquimia")
 spec_base = st.sidebar.slider("Alquimista (Base)", 0, 100, 100)
 with st.sidebar.expander("Tus 15 Ramas de Pociones"):
     specs_usuario = {
-        "Curación": st.slider("Curación", 0, 100, 100),
-        "Energía": st.slider("Energía", 0, 100, 0),
-        "Gigantismo": st.slider("Gigantismo", 0, 100, 0),
-        "Resistencia": st.slider("Resistencia", 0, 100, 0),
-        "Pegajosa": st.slider("Pegajosa", 0, 100, 0),
-        "Invisibilidad": st.slider("Invisibilidad", 0, 100, 0),
-        "Veneno": st.slider("Veneno", 0, 100, 0),
-        "Limpieza": st.slider("Limpieza", 0, 100, 0),
-        "Ácido": st.slider("Ácido", 0, 100, 0),
-        "Calmante": st.slider("Calmante", 0, 100, 0),
-        "Recolección": st.slider("Recolección", 0, 100, 0),
-        "Fuego Infernal": st.slider("Fuego Infernal", 0, 100, 0),
-        "Berserker": st.slider("Berserker", 0, 100, 0),
-        "Tornado": st.slider("Tornado", 0, 100, 0),
-        "Destilados": st.slider("Destilados (Alcohol)", 0, 100, 0)
+        "Curación": st.slider("Curación", 0, 100, 100), "Energía": st.slider("Energía", 0, 100, 0),
+        "Gigantismo": st.slider("Gigantismo", 0, 100, 0), "Resistencia": st.slider("Resistencia", 0, 100, 0),
+        "Pegajosa": st.slider("Pegajosa", 0, 100, 0), "Invisibilidad": st.slider("Invisibilidad", 0, 100, 0),
+        "Veneno": st.slider("Veneno", 0, 100, 0), "Limpieza": st.slider("Limpieza", 0, 100, 0),
+        "Ácido": st.slider("Ácido", 0, 100, 0), "Calmante": st.slider("Calmante", 0, 100, 0),
+        "Recolección": st.slider("Recolección", 0, 100, 0), "Fuego Infernal": st.slider("Fuego Infernal", 0, 100, 0),
+        "Berserker": st.slider("Berserker", 0, 100, 0), "Tornado": st.slider("Tornado", 0, 100, 0),
+        "Destilados": st.slider("Destilados", 0, 100, 0)
     }
 
 tab1, tab2, tab3 = st.tabs(["🌱 1. Cultivos", "🧪 2. Alquimia Inteligente", "📈 3. Estrategia Cruzada"])
@@ -126,12 +111,9 @@ tab1, tab2, tab3 = st.tabs(["🌱 1. Cultivos", "🧪 2. Alquimia Inteligente", 
 with tab1:
     st.header("Análisis de Rentabilidad Agrícola")
     col_c1, col_c2, col_c3 = st.columns(3)
-    with col_c1:
-        ciudad_cultivo = st.selectbox("Ciudad de tu isla:", ["Martlock", "Caerleon", "Lymhurst", "Bridgewatch", "Thetford", "Fort_Sterling", "Brecilien"])
-    with col_c2:
-        hierba_elegida = st.selectbox("Hierba a plantar:", list(ALBION_DB["hierbas"].keys()))
-    with col_c3:
-        parcelas = st.number_input("Número de Parcelas:", min_value=1, value=10)
+    with col_c1: ciudad_cultivo = st.selectbox("Ciudad de tu isla:", ["Martlock", "Caerleon", "Lymhurst", "Bridgewatch", "Thetford", "Fort_Sterling", "Brecilien"])
+    with col_c2: hierba_elegida = st.selectbox("Hierba a plantar:", list(ALBION_DB["hierbas"].keys()))
+    with col_c3: parcelas = st.number_input("Número de Parcelas:", min_value=1, value=10)
 
     tipo_venta = st.radio("Venta de la cosecha:", ["Venta Directa (Solo Tax)", "Crear Orden de Venta (+2.5% Setup Fee)"])
     impuesto_total = tax_venta if "Venta Directa" in tipo_venta else (tax_venta + setup_fee)
@@ -170,16 +152,12 @@ with tab1:
             c_res2.metric(f"Comprar semillas en {c_semilla_opt.replace('_', ' ')}", f"-{coste_reposicion:,.0f} silver")
 
             with st.expander("🌍 Ver precios de la cosecha en otras ciudades"):
-                st.markdown(f"**Precios de Venta (Sell Order) para {hierba_elegida}:**")
                 for ciudad, datos in mercados_hierba.items():
-                    if ciudad != c_hierba_opt:
-                        st.write(f"- {ciudad.replace('_', ' ')}: {datos['sell_min']} silver")
+                    if ciudad != c_hierba_opt: st.write(f"- {ciudad.replace('_', ' ')}: {datos['sell_min']} silver")
             
             with st.expander("🌍 Ver precios de semillas en otras ciudades"):
-                st.markdown(f"**Precios de Compra (Sell Order) para la semilla:**")
                 for ciudad, datos in mercados_semillas.items():
-                    if ciudad != c_semilla_opt:
-                        st.write(f"- {ciudad.replace('_', ' ')}: {datos['sell_min']} silver")
+                    if ciudad != c_semilla_opt: st.write(f"- {ciudad.replace('_', ' ')}: {datos['sell_min']} silver")
 
             datos_hist_hierba = obtener_historial_24h(hierba_elegida, c_hierba_opt)
             with st.expander(f"📊 Ver volumen y liquidez en el mercado óptimo ({c_hierba_opt.replace('_', ' ')})"):
@@ -209,8 +187,7 @@ with tab2:
         
         id_final = f"{receta['id_base']}@{enc_alq}" if enc_alq > 0 else receta['id_base']
         mats = receta["mats"].copy()
-        if enc_alq > 0:
-            mats[f"{receta['tier_extracto']}_ARCANE_EXTRACT"] = 18 * enc_alq
+        if enc_alq > 0: mats[f"{receta['tier_extracto']}_ARCANE_EXTRACT"] = 18 * enc_alq
             
         ids_buscar = [id_final] + list(mats.keys())
         precios_globales = obtener_precios_globales(ids_buscar)
@@ -223,14 +200,13 @@ with tab2:
             
             for mat, cant_base in mats.items():
                 mat_real = math.ceil((cant_base * crafteos) * (1 - rrr))
-                
                 mercados_mat = {k: v for k, v in precios_globales.get(mat, {}).items() if v.get('sell_min', 0) > 0}
+                
                 if mercados_mat:
                     ciudad_barata = min(mercados_mat, key=lambda k: mercados_mat[k]['sell_min'])
                     precio_mat = mercados_mat[ciudad_barata]['sell_min']
                 else:
-                    ciudad_barata = "Desconocida"
-                    precio_mat = 0
+                    ciudad_barata, precio_mat = "Desconocida", 0
                 
                 coste_mat = (mat_real * precio_mat) * (1 + setup_fee) if "Orden de Compra" in tipo_compra else (mat_real * precio_mat)
                 coste_total_mats += coste_mat
@@ -239,8 +215,7 @@ with tab2:
                 
                 with st.expander(f"Ver precios de {mat} en otras ciudades"):
                     for ciudad, datos in mercados_mat.items():
-                        if ciudad != ciudad_barata:
-                            st.write(f"  - {ciudad.replace('_', ' ')}: {datos['sell_min']} silver")
+                        if ciudad != ciudad_barata: st.write(f"  - {ciudad.replace('_', ' ')}: {datos['sell_min']} silver")
 
             mercados_pocion = {k: v for k, v in precios_globales.get(id_final, {}).items() if v.get('sell_min', 0) > 0}
             ciudad_cara = max(mercados_pocion, key=lambda k: mercados_pocion[k]['sell_min']) if mercados_pocion else "Brecilien"
@@ -252,4 +227,22 @@ with tab2:
             rama = receta["rama"]
             nodos_extra = sum(v for k, v in specs_usuario.items() if k != rama)
             eficiencia = (spec_base * 30) + (specs_usuario.get(rama, 0) * 250) + (nodos_extra * 18)
-            foco_total = (receta["foco_base"] * (0.5 ** (eficiencia / 10
+            foco_total = (receta["foco_base"] * (0.5 ** (eficiencia / 10000))) * crafteos
+            
+            st.markdown("---")
+            c_res1, c_res2, c_res3 = st.columns(3)
+            c_res1.metric(f"Ingreso (Vendiendo en {ciudad_cara.replace('_', ' ')})", f"{ingreso_neto:,.0f} s")
+            c_res2.metric("Beneficio Limpio", f"{beneficio:,.0f} s")
+            c_res3.metric("Coste de Foco Total", f"{foco_total:,.0f} pts")
+
+            with st.expander("🌍 Ver precio de venta de la poción en otras ciudades"):
+                for ciudad, datos in mercados_pocion.items():
+                    if ciudad != ciudad_cara: st.write(f"- {ciudad.replace('_', ' ')}: {datos['sell_min']} silver")
+
+            datos_hist_pocion = obtener_historial_24h(id_final, ciudad_cara)
+            with st.expander(f"📊 Ver volumen de la poción en el mercado óptimo ({ciudad_cara.replace('_', ' ')})"):
+                c1, c2, c3, c4 = st.columns(4)
+                c1.metric("Orden de Venta (Sell)", f"{mercados_pocion.get(ciudad_cara, {}).get('sell_min', 0)} s")
+                c2.metric("Orden de Compra (Buy)", f"{mercados_pocion.get(ciudad_cara, {}).get('buy_max', 0)} s")
+                c3.metric("Precio Medio (24h)", f"{datos_hist_pocion['precio_medio']:.1f} s")
+                c4.metric("Volumen Movido (24h)", f"{datos_hist_pocion['volumen']:,}
