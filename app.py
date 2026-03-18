@@ -15,19 +15,11 @@ ALBION_DB = {
     },
     "recetas": {
         "Curación Mayor (T6)": {"id": "T6_POTION_HEAL", "rama": "Curación", "foco": 1648, "mats": {"T6_FOXGLOVE": 72, "T3_EGG": 18, "T1_ALCOHOL": 18}},
-        "Curación (T4)": {"id": "T4_POTION_HEAL", "rama": "Curación", "foco": 464, "mats": {"T4_BURDOCK": 24, "T2_AGARIC": 12}},
         "Veneno Mayor (T8)": {"id": "T8_POTION_COOLDOWN", "rama": "Veneno", "foco": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T5_TEASEL": 36, "T8_ALCOHOL": 18, "T6_MILK": 18}},
-        "Veneno (T6)": {"id": "T6_POTION_COOLDOWN", "rama": "Veneno", "foco": 1648, "mats": {"T6_FOXGLOVE": 24, "T5_TEASEL": 12, "T3_EGG": 6}},
         "Resistencia Mayor (T7)": {"id": "T7_POTION_STONESKIN", "rama": "Resistencia", "foco": 2736, "mats": {"T7_MULLEIN": 72, "T6_FOXGLOVE": 36, "T5_EGG": 18, "T7_ALCOHOL": 18}},
         "Invisibilidad (T8)": {"id": "T8_POTION_INVIS_1", "rama": "Invisibilidad", "foco": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T5_TEASEL": 36, "T8_ALCOHOL": 18, "T6_MILK": 18}},
         "Gigantismo Mayor (T7)": {"id": "T7_POTION_REVIVE", "rama": "Gigantismo", "foco": 2736, "mats": {"T7_MULLEIN": 72, "T6_FOXGLOVE": 36, "T5_EGG": 18, "T7_ALCOHOL": 18}},
         "Energía Mayor (T6)": {"id": "T6_POTION_ENERGY", "rama": "Energía", "foco": 1648, "mats": {"T6_FOXGLOVE": 72, "T3_EGG": 18, "T1_ALCOHOL": 18}},
-        "Limpieza (T7)": {"id": "T7_POTION_CLEANSE", "rama": "Limpieza", "foco": 2736, "mats": {"T7_MULLEIN": 72, "T6_FOXGLOVE": 36, "T5_EGG": 18}},
-        "Ácido (T8)": {"id": "T8_POTION_ACID", "rama": "Ácido", "foco": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T6_MILK": 18}},
-        "Berserker (T8)": {"id": "T8_POTION_BERSERK", "rama": "Berserker", "foco": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T6_MILK": 18}},
-        "Infierno (T8)": {"id": "T8_POTION_HELL", "rama": "Fuego Infernal", "foco": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T6_MILK": 18}},
-        "Tornado (T8)": {"id": "T8_POTION_TORNADO", "rama": "Tornado", "foco": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T6_MILK": 18}},
-        "Calmante (T7)": {"id": "T7_POTION_SLOW", "rama": "Calmante", "foco": 2736, "mats": {"T7_MULLEIN": 72, "T6_FOXGLOVE": 36, "T5_EGG": 18}},
         "Pegajosa (T6)": {"id": "T6_POTION_STICKY", "rama": "Pegajosa", "foco": 1648, "mats": {"T6_FOXGLOVE": 24, "T5_TEASEL": 12, "T3_EGG": 6}}
     },
     "ramas": ["Curación", "Energía", "Gigantismo", "Resistencia", "Pegajosa", "Invisibilidad", "Veneno", "Limpieza", "Ácido", "Calmante", "Recolección", "Fuego Infernal", "Berserker", "Tornado", "Destilados"],
@@ -50,7 +42,7 @@ def get_p(ids):
     except: return {}
 
 st.set_page_config(page_title="Albion Master Terminal", layout="wide")
-st.sidebar.header("Módulo 0: Perfil de Alquimista")
+st.sidebar.header("Módulo 0: Perfil")
 premium = st.sidebar.checkbox("Premium Activo", value=True)
 tax_v = 0.04 if premium else 0.08
 setup_fee = 0.025
@@ -66,8 +58,10 @@ def calcular_foco(foco_base, rama_p):
     for r, lvl in user_specs.items():
         if r != rama_p: puntos += (lvl * 18)
     return foco_base * (0.5 ** (puntos / 10000))
-    t1, t2, t3 = st.tabs(["🌱 1. Cultivos", "🧪 2. Alquimia Pro", "📈 3. Logística Cruzada"])
 
+t1, t2, t3 = st.tabs(["🌱 1. Cultivos", "🧪 2. Alquimia Pro", "📈 3. Estrategia Cruzada"])
+
+# --- MODULO 1: CULTIVOS ---
 with t1:
     st.header("Análisis de Rentabilidad Agrícola")
     c1, c2, c3 = st.columns(3)
@@ -93,16 +87,17 @@ with t1:
             st.success(f"### Beneficio Neto: {ing_n - cost_s:,.0f} silver"); st.caption(f"🌱 Retorno: {info['ret']*100:.1f}% | Repones {s_perd} semillas.")
             col_a, col_b = st.columns(2)
             with col_a:
-                st.metric(f"Vender en {c_v_o}", f"{ing_n:,.0f} s"); 
+                st.metric(f"Vender en {c_v_o}", f"{ing_n:,.0f} s")
                 with st.expander("Otros mercados"):
                     for c, d in m_h.items(): st.write(f"{c}: {d['s']} s")
             with col_b:
-                st.metric(f"Semillas en {c_c_o}", f"-{cost_s:,.0f} s");
+                st.metric(f"Semillas en {c_c_o}", f"-{cost_s:,.0f} s")
                 with st.expander("Otros precios"):
                     for c, d in m_s.items(): st.write(f"{c}: {d['s']} s")
 
+# --- MODULO 2: ALQUIMIA ---
 with t2:
-    st.header("🧪 Calculadora de Alquimia Avanzada")
+    st.header("🧪 Calculadora de Alquimia Pro")
     p_sel = st.selectbox("Selecciona Poción:", list(ALBION_DB["recetas"].keys()))
     rec = ALBION_DB["recetas"][p_sel]
     col_alq_a, col_alq_b = st.columns([2, 1])
@@ -110,10 +105,11 @@ with t2:
         tasa_nutri = st.number_input("Tasa Nutrición Tienda:", value=400)
         incluir_orden = st.checkbox("Tasa Orden Venta (2.5%)", value=True)
         cant_crafteo = st.number_input("Cantidad total pociones:", min_value=5, step=5, value=100)
+        usar_foco = st.checkbox("Usar Foco en Crafteo", value=True)
 
     pg = get_p([rec["id"]] + list(rec["mats"].keys()))
     with col_alq_a:
-        coste_mats_total = 0; rrr = 0.482; crafteos = math.ceil(cant_crafteo / 5)
+        coste_mats_total = 0; rrr = 0.482 if usar_foco else 0.248; crafteos = math.ceil(cant_crafteo / 5)
         for m, qb in rec["mats"].items():
             m_p = pg.get(m, {})
             cb = min(m_p, key=lambda x: m_p[x]['s']) if m_p else "N/A"
@@ -127,37 +123,10 @@ with t2:
         pv_man = st.number_input(f"Precio Venta (Brecilien API: {pv_api})", value=int(pv_api))
         beneficio = (cant_crafteo * pv_man * (1 - (tax_v + (0.025 if incluir_orden else 0)))) - coste_mats_total
         st.success(f"### Beneficio Neto: {beneficio:,.0f} silver")
-        st.info(f"Foco total: {calcular_foco(rec['foco'], rec['rama']) * crafteos:,.0f}")
-        with t3:
+        if usar_foco:
+            st.info(f"Foco total estimado: {calcular_foco(rec['foco'], rec['rama']) * crafteos:,.0f}")
+
+# --- MODULO 3: ESTRATEGIA ---
+with t3:
     st.header("📈 Estrategia Cruzada")
-    st.write("¿Plantar o comprar? Comprueba si tu granja es realmente eficiente para esta poción.")
-    
-    mats_pocion = rec["mats"]
-    ingredientes_producibles = [m for m in mats_pocion.keys() if m in ALBION_DB["hierbas"]]
-    
-    check_mats = {}
-    for mat in ingredientes_producibles:
-    with t3:
-    st.header("📈 Estrategia Cruzada")
-    st.write("¿Plantar o comprar? Comprueba si tu granja es realmente eficiente para esta poción.")
-    
-    mats_pocion = rec["mats"]
-    ingredientes_producibles = [m for m in mats_pocion.keys() if m in ALBION_DB["hierbas"]]
-    
-    check_mats = {}
-    for mat in ingredientes_producibles:
-        check_mats[mat] = st.checkbox(f"Tengo granja propia de {mat}", value=False)
-    
-    if st.button("Analizar Ahorro"):
-        ahorro_total = 0
-        for mat, es_propio in check_mats.items():
-            if es_propio:
-                # Coste mercado vs Coste producción (aprox según Módulo 1)
-                p_mercado = pg.get(mat, {}).get("Brecilien", {}).get("s", 0)
-                # Estimamos ahorro neto por unidad producida (Semilla vs Venta planta)
-                ahorro_unid = p_mercado * 0.4 
-                unidades = math.ceil((mats_pocion[mat] * crafteos) * (1 - 0.482))
-                ahorro_total += (unidades * ahorro_unid)
-        
-        st.write(f"Utilizando tus propios ingredientes ahorras aproximadamente: **{ahorro_total:,.0f} silver**")
-        st.caption("Nota: Este cálculo resta el coste de oportunidad (lo que ganarías vendiendo la planta directamente).")
+    st.write("¿Plantar o comprar
