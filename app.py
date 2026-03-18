@@ -85,8 +85,7 @@ with st.sidebar.expander("Specs de Pociones"):
         "Destilados": st.slider("Destilados", 0, 100, 0)
     }
 
-t1, t2, t3 = st.tabs(["🌱 1. Cultivos", "🧪 2. Alquimia Inteligente", "📈 3. Estrategia Cruzada"])
-with t1:
+t1, t2, t3 = st.tabs(["🌱 1. Cultivos", "🧪 2. Alquimia Inteligente", "📈 3. Estrategia Cruzada"])with t1:
     st.header("Rentabilidad Agrícola")
     c1, c2, c3 = st.columns(3)
     with c1: ciu_c = st.selectbox("Ciudad isla:", ["Martlock", "Caerleon", "Lymhurst", "Bridgewatch", "Thetford", "Fort_Sterling", "Brecilien"])
@@ -120,8 +119,7 @@ with t1:
             st.caption(f"Retorno: {ret_b*100:.1f}%. Repones {s_perd} semillas.")
             r1, r2 = st.columns(2)
             r1.metric(f"Venta en {c_h_o}", f"{i_neto:,.0f} s")
-            r2.metric(f"Semillas en {c_s_o}", f"-{c_rep:,.0f} s")
-            with t2:
+            r2.metric(f"Semillas en {c_s_o}", f"-{c_rep:,.0f} s")with t2:
     st.header("Alquimia Inteligente")
     a1, a2, a3, a4 = st.columns(4)
     with a1: p_alq = st.selectbox("Poción:", list(ALBION_DB["recetas"].keys()))
