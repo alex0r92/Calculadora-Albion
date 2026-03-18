@@ -33,16 +33,19 @@ ALBION_DB = {
 @st.cache_data(ttl=60)
 def obtener_precios_completos(lista_ids, ciudad):
     if not lista_ids: return {}
-    url = f"https://www.albion-online-data.com/api/v2/stats/prices/{','.join(lista_ids)}?locations={ciudad}"
+    # Añadimos &qualities=1 a la URL para evitar que las calidades vacías sobreescriban los datos
+    url = f"https://www.albion-online-data.com/api/v2/stats/prices/{','.join(lista_ids)}?locations={ciudad}&qualities=1"
     try:
         data = requests.get(url, timeout=10)
         if data.status_code == 200:
             resultados = {}
             for item in data.json():
-                resultados[item['item_id']] = {
-                    "sell_min": item['sell_price_min'],
-                    "buy_max": item['buy_price_max']
-                }
+                # Filtro extra: solo guarda el dato si el precio es mayor a 0
+                if item['sell_price_min'] > 0 or item['buy_price_max'] > 0:
+                    resultados[item['item_id']] = {
+                        "sell_min": item['sell_price_min'],
+                        "buy_max": item['buy_price_max']
+                    }
             return resultados
         return {}
     except:
@@ -50,13 +53,14 @@ def obtener_precios_completos(lista_ids, ciudad):
 
 @st.cache_data(ttl=300) # El historial no cambia tan rápido, lo cacheamos 5 mins
 def obtener_historial_24h(item_id, ciudad):
-    url = f"https://www.albion-online-data.com/api/v2/stats/history/{item_id}?locations={ciudad}&time-scale=24"
+    # Añadimos &qualities=1 también al historial
+    url = f"https://www.albion-online-data.com/api/v2/stats/history/{item_id}?locations={ciudad}&time-scale=24&qualities=1"
     try:
         data = requests.get(url, timeout=10)
         if data.status_code == 200 and len(data.json()) > 0:
             historial = data.json()[0].get('data', [])
             if historial:
-                # Coger el dato más reciente de las últimas 24h
+                # Coge el último paquete de datos registrado
                 ultimo_dato = historial[-1]
                 return {
                     "precio_medio": ultimo_dato.get('average_price', 0),
