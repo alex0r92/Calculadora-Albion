@@ -126,7 +126,7 @@ with tab1:
         precios = obtener_precios_completos([hierba_elegida, id_semilla], ciudad_mercado)
         datos_hist_hierba = obtener_historial_24h(hierba_elegida, ciudad_mercado)
         
-        if no precios:
+        if not precios:
             st.error("Error conectando con Albion Data Project. Reintenta en unos segundos.")
         else:
             # Extracción de precios
