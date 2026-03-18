@@ -165,7 +165,7 @@ with tab1:
                 c1.metric("Orden de Venta (Sell)", f"{mercados_hierba.get(c_hierba_opt, {}).get('sell_min', 0)} s")
                 c2.metric("Orden de Compra (Buy)", f"{mercados_hierba.get(c_hierba_opt, {}).get('buy_max', 0)} s")
                 c3.metric("Precio Medio (24h)", f"{datos_hist_hierba['precio_medio']:.1f} s")
-                c4.metric("Volumen Movido (24h)", f"{datos_hist_hierba['volumen']:,} uds")
+                c4.metric("Volumen Movido", f"{datos_hist_hierba['volumen']:,} uds")
 
 # --- MÓDULO 2: ALQUIMIA ---
 with tab2:
@@ -176,73 +176,4 @@ with tab2:
     with c_a1: pocion_alq = st.selectbox("Poción:", list(ALBION_DB["recetas"].keys()), key="m2_poc")
     with c_a2: enc_alq = st.selectbox("Encantamiento:", [0, 1, 2, 3, 4], format_func=lambda x: f".{x}", key="m2_enc")
     with c_a3: cant_alq = st.number_input("Cantidad de pociones:", min_value=5, step=5, value=1000, key="m2_cant")
-    with c_a4: usar_foco_alq = st.checkbox("Usar Foco en Crafteo", value=True, key="m2_foco")
-    
-    tipo_compra = st.radio("¿Cómo compras los materiales?", ["Compra Directa (Buy from Sell Order)", "Crear Orden de Compra (+2.5% Setup Fee)"])
-
-    if st.button("Escanear Mercado de Alquimia", type="primary"):
-        receta = ALBION_DB["recetas"][pocion_alq]
-        crafteos = math.ceil(cant_alq / 5)
-        rrr = 0.482 if usar_foco_alq else 0.248
-        
-        id_final = f"{receta['id_base']}@{enc_alq}" if enc_alq > 0 else receta['id_base']
-        mats = receta["mats"].copy()
-        if enc_alq > 0: mats[f"{receta['tier_extracto']}_ARCANE_EXTRACT"] = 18 * enc_alq
-            
-        ids_buscar = [id_final] + list(mats.keys())
-        precios_globales = obtener_precios_globales(ids_buscar)
-        
-        if not precios_globales:
-            st.error("Error conectando a la API.")
-        else:
-            coste_total_mats = 0
-            st.markdown("### 🛒 Lista de la Compra Optimizada")
-            
-            for mat, cant_base in mats.items():
-                mat_real = math.ceil((cant_base * crafteos) * (1 - rrr))
-                mercados_mat = {k: v for k, v in precios_globales.get(mat, {}).items() if v.get('sell_min', 0) > 0}
-                
-                if mercados_mat:
-                    ciudad_barata = min(mercados_mat, key=lambda k: mercados_mat[k]['sell_min'])
-                    precio_mat = mercados_mat[ciudad_barata]['sell_min']
-                else:
-                    ciudad_barata, precio_mat = "Desconocida", 0
-                
-                coste_mat = (mat_real * precio_mat) * (1 + setup_fee) if "Orden de Compra" in tipo_compra else (mat_real * precio_mat)
-                coste_total_mats += coste_mat
-                
-                st.write(f"- **{mat}**: Necesitas {mat_real} uds. -> Óptimo: **{ciudad_barata.replace('_', ' ')}** a {precio_mat}s. (Total: {coste_mat:,.0f} s)")
-                
-                with st.expander(f"Ver precios de {mat} en otras ciudades"):
-                    for ciudad, datos in mercados_mat.items():
-                        if ciudad != ciudad_barata: st.write(f"  - {ciudad.replace('_', ' ')}: {datos['sell_min']} silver")
-
-            mercados_pocion = {k: v for k, v in precios_globales.get(id_final, {}).items() if v.get('sell_min', 0) > 0}
-            ciudad_cara = max(mercados_pocion, key=lambda k: mercados_pocion[k]['sell_min']) if mercados_pocion else "Brecilien"
-            precio_venta = mercados_pocion.get(ciudad_cara, {}).get('sell_min', 0)
-            
-            ingreso_neto = (cant_alq * precio_venta) * (1 - tax_venta)
-            beneficio = ingreso_neto - coste_total_mats
-            
-            rama = receta["rama"]
-            nodos_extra = sum(v for k, v in specs_usuario.items() if k != rama)
-            eficiencia = (spec_base * 30) + (specs_usuario.get(rama, 0) * 250) + (nodos_extra * 18)
-            foco_total = (receta["foco_base"] * (0.5 ** (eficiencia / 10000))) * crafteos
-            
-            st.markdown("---")
-            c_res1, c_res2, c_res3 = st.columns(3)
-            c_res1.metric(f"Ingreso (Vendiendo en {ciudad_cara.replace('_', ' ')})", f"{ingreso_neto:,.0f} s")
-            c_res2.metric("Beneficio Limpio", f"{beneficio:,.0f} s")
-            c_res3.metric("Coste de Foco Total", f"{foco_total:,.0f} pts")
-
-            with st.expander("🌍 Ver precio de venta de la poción en otras ciudades"):
-                for ciudad, datos in mercados_pocion.items():
-                    if ciudad != ciudad_cara: st.write(f"- {ciudad.replace('_', ' ')}: {datos['sell_min']} silver")
-
-            datos_hist_pocion = obtener_historial_24h(id_final, ciudad_cara)
-            with st.expander(f"📊 Ver volumen de la poción en el mercado óptimo ({ciudad_cara.replace('_', ' ')})"):
-                c1, c2, c3, c4 = st.columns(4)
-                c1.metric("Orden de Venta (Sell)", f"{mercados_pocion.get(ciudad_cara, {}).get('sell_min', 0)} s")
-                c2.metric("Orden de Compra (Buy)", f"{mercados_pocion.get(ciudad_cara, {}).get('buy_max', 0)} s")
-                c3.metric("Precio Medio (24h)", f"{datos_hist_pocion['precio_medio']:.1f} s")
-                c4.metric("Volumen Movido (24h)", f"{datos_hist_pocion['volumen']:,}
+    with c_a4: usar_foco_
