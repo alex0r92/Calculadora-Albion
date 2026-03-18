@@ -72,3 +72,78 @@ def obtener_precios_globales(lista_ids):
 
 @st.cache_data(ttl=300)
 def obtener_historial_24h(item_id, ciudad):
+    url = f"https://www.albion-online-data.com/api/v2/stats/history/{item_id}?locations={ciudad}&time-scale=24&qualities=1"
+    try:
+        data = requests.get(url, timeout=10)
+        if data.status_code == 200 and len(data.json()) > 0:
+            historial = data.json()[0].get('data', [])
+            if historial:
+                ultimo_dato = historial[-1]
+                return {
+                    "precio_medio": ultimo_dato.get('average_price', 0),
+                    "volumen": ultimo_dato.get('item_count', 0)
+                }
+        return {"precio_medio": 0, "volumen": 0}
+    except:
+        return {"precio_medio": 0, "volumen": 0}
+
+# ==========================================
+# 3. INTERFAZ Y MÓDULOS
+# ==========================================
+st.set_page_config(page_title="Albion Market Terminal", layout="wide")
+st.title("⚖️ Terminal de Mercado y Logística")
+
+# --- MÓDULO 0: PERFIL GLOBAL ---
+st.sidebar.header("Módulo 0: Tu Perfil")
+premium = st.sidebar.checkbox("Premium Activo (Tax 4%)", value=True)
+tax_venta = 0.04 if premium else 0.08
+setup_fee = 0.025 
+
+st.sidebar.subheader("Specs de Alquimia")
+spec_base = st.sidebar.slider("Alquimista (Base)", 0, 100, 100)
+with st.sidebar.expander("Tus 15 Ramas de Pociones"):
+    specs_usuario = {
+        "Curación": st.slider("Curación", 0, 100, 100),
+        "Energía": st.slider("Energía", 0, 100, 0),
+        "Gigantismo": st.slider("Gigantismo", 0, 100, 0),
+        "Resistencia": st.slider("Resistencia", 0, 100, 0),
+        "Pegajosa": st.slider("Pegajosa", 0, 100, 0),
+        "Invisibilidad": st.slider("Invisibilidad", 0, 100, 0),
+        "Veneno": st.slider("Veneno", 0, 100, 0),
+        "Limpieza": st.slider("Limpieza", 0, 100, 0),
+        "Ácido": st.slider("Ácido", 0, 100, 0),
+        "Calmante": st.slider("Calmante", 0, 100, 0),
+        "Recolección": st.slider("Recolección", 0, 100, 0),
+        "Fuego Infernal": st.slider("Fuego Infernal", 0, 100, 0),
+        "Berserker": st.slider("Berserker", 0, 100, 0),
+        "Tornado": st.slider("Tornado", 0, 100, 0),
+        "Destilados": st.slider("Destilados (Alcohol)", 0, 100, 0)
+    }
+
+tab1, tab2, tab3 = st.tabs(["🌱 1. Cultivos", "🧪 2. Alquimia Inteligente", "📈 3. Estrategia Cruzada"])
+
+# --- MÓDULO 1: CULTIVOS ---
+with tab1:
+    st.header("Análisis de Rentabilidad Agrícola")
+    col_c1, col_c2, col_c3 = st.columns(3)
+    with col_c1:
+        ciudad_cultivo = st.selectbox("Ciudad de tu isla:", ["Martlock", "Caerleon", "Lymhurst", "Bridgewatch", "Thetford", "Fort_Sterling", "Brecilien"])
+    with col_c2:
+        hierba_elegida = st.selectbox("Hierba a plantar:", list(ALBION_DB["hierbas"].keys()))
+    with col_c3:
+        parcelas = st.number_input("Número de Parcelas:", min_value=1, value=10)
+
+    tipo_venta = st.radio("Venta de la cosecha:", ["Venta Directa (Solo Tax)", "Crear Orden de Venta (+2.5% Setup Fee)"])
+    impuesto_total = tax_venta if "Venta Directa" in tipo_venta else (tax_venta + setup_fee)
+
+    if st.button("Ejecutar Análisis de Granja"):
+        id_semilla = ALBION_DB["hierbas"][hierba_elegida]["seed"]
+        precios_globales = obtener_precios_globales([hierba_elegida, id_semilla])
+        
+        if not precios_globales:
+            st.error("Error conectando a la API.")
+        else:
+            bono_local = 1.1 if hierba_elegida in ALBION_DB["bonos_ciudad"].get(ciudad_cultivo, []) else 1.0
+            huecos_totales = parcelas * 9
+            cosecha_estimada = math.floor(huecos_totales * 9 * bono_local)
+            semillas_perdidas = math.ceil(huecos_totales * (1 -
