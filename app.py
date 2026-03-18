@@ -91,15 +91,22 @@ t1, t2, t3, t4 = st.tabs(["🌱 1. Cultivos", "🧪 2. Alquimia", "📈 3. Estra
 
 # --- MÓDULO 1: CULTIVOS ---
 with t1:
-    st.header("Análisis de Granja y Reposición")
-    c1, c2, c3 = st.columns(3)
-    with c1: ciu_c = st.selectbox("Isla en:", ["Martlock", "Caerleon", "Lymhurst", "Bridgewatch", "Thetford", "Fort_Sterling", "Brecilien"])
-    with c2: hie_e = st.selectbox("Planta:", list(ALBION_DB["hierbas"].keys()))
-    with c3: parc = st.number_input("Nº Parcelas:", min_value=1, value=10)
-
-    if st.button("Calcular Granja"):
+    st.header("Análisis de Granja Multi-Isla")
+    num_islas = st.number_input("¿Cuántas islas quieres gestionar?", min_value=1, max_value=5, value=1)
+    
+    beneficio_total_granjas = 0
+    
+    for i in range(int(num_islas)):
+        st.markdown(f"### 🏝️ Isla {i+1}")
+        c1, c2, c3 = st.columns(3)
+        # Añadimos key=... para que Streamlit no confunda los botones de cada isla
+        with c1: ciu_c = st.selectbox("Ubicación:", ["Martlock", "Caerleon", "Lymhurst", "Bridgewatch", "Thetford", "Fort_Sterling", "Brecilien"], key=f"ciu_{i}")
+        with c2: hie_e = st.selectbox("Planta:", list(ALBION_DB["hierbas"].keys()), key=f"hie_{i}")
+        with c3: parc = st.number_input("Nº Parcelas:", min_value=1, value=10, key=f"parc_{i}")
+        
         info = ALBION_DB["hierbas"][hie_e]
         pg = get_p([hie_e, info["seed"]])
+        
         if pg:
             tiene_bono = hie_e in ALBION_DB["bonos"].get(ciu_c, [])
             bono = 1.1 if tiene_bono else 1.0
@@ -118,11 +125,19 @@ with t1:
             ing_bruto = cosecha_est * p_v_opt
             coste_repo = s_perd * p_s_opt
             ing_neto = ing_bruto * (1 - tax_v - s_fee)
+            neto_isla = ing_neto - coste_repo
+            beneficio_total_granjas += neto_isla
             
-            if tiene_bono: st.success(f"✅ Bono Activo: {ciu_c} tiene +10% de producción.")
-            st.metric("Beneficio Neto (Tras Reposición e Impuestos)", f"{ing_neto - coste_repo:,.0f} silver")
-            st.info(f"Venta Óptima: {c_v_opt} ({p_v_opt}s) | Compra Semillas: {c_s_opt} ({p_s_opt}s)")
-
+            col_res1, col_res2 = st.columns([1, 2])
+            with col_res1:
+                st.metric(f"Beneficio (Isla {i+1})", f"{neto_isla:,.0f} s")
+            with col_res2:
+                st.info(f"Vender: {c_v_opt} ({p_v_opt}s) | Semillas: {c_s_opt} ({p_s_opt}s)")
+                if tiene_bono: st.success(f"✅ Bono +10% activo en {ciu_c}")
+        st.divider()
+        
+    if num_islas > 1:
+        st.success(f"## 💰 Beneficio Total de tus {num_islas} Islas: {beneficio_total_granjas:,.0f} silver")
 # --- MÓDULO 2: ALQUIMIA ---
 with t2:
     st.header("Alquimia Pro (Precios Rápidos)")
@@ -160,3 +175,62 @@ with t2:
         beneficio_alq = (cant * pv_man * (1 - tax_v - s_fee)) - (coste_mats + t_nutri)
         st.success(f"### Beneficio Neto: {beneficio_alq:,.0f} silver")
         if foco: st.info(f"💡 Foco necesario: {calcular_foco(rec['foco'], rec['rama']) * ciclos:,.0f} pts")
+with t3:
+    st.header("Logística Cruzada")
+    st.write("Calcula el ahorro real de usar tus propios cultivos.")
+    if st.button("Calcular Diferencial de Ahorro"):
+        mats_propios = [m for m in rec["mats"].keys() if m in ALBION_DB["hierbas"]]
+        if not mats_propios:
+            st.warning("Esta poción no usa hierbas cultivables.")
+        else:
+            ahorro_tot = sum([(math.ceil((rec["mats"][m] * ciclos) * (1 - rrr)) * pg_alq.get(m, {}).get("Brecilien", {}).get("s", 0) * 0.4) for m in mats_propios])
+            st.success(f"Ahorro estimado por producción propia: {ahorro_tot:,.0f} silver")
+
+with t4:
+    st.header("📊 Escáner de Mercado Avanzado")
+    st.write("Verifica la liquidez del mercado (Volumen) y las órdenes actuales antes de operar.")
+    
+    categoria = st.radio("¿Qué quieres escanear?", ["Pociones", "Ingredientes", "Semillas"], horizontal=True)
+    item_id_scan = ""
+    
+    if categoria == "Pociones":
+        c_p1, c_p2 = st.columns(2)
+        with c_p1: pocion_sel = st.selectbox("Elige la Poción:", list(ALBION_DB["recetas"].keys()), key="esc_p")
+        with c_p2: encanto_sel = st.selectbox("Nivel de Encantamiento:", [0, 1, 2, 3], key="esc_e")
+        base_id = ALBION_DB["recetas"][pocion_sel]["id"]
+        item_id_scan = f"{base_id}@{encanto_sel}" if encanto_sel > 0 else base_id
+        
+    elif categoria == "Ingredientes":
+        lista_mats = list(ALBION_DB["hierbas"].keys()) + ["T1_ALCOHOL", "T7_ALCOHOL", "T8_ALCOHOL", "T3_EGG", "T5_EGG", "T6_MILK", "T8_ALCHEMICAL_EXTRACT"] + list(ALBION_DB["esencias"].values())
+        item_id_scan = st.selectbox("Elige el Ingrediente:", sorted(list(set(lista_mats))))
+        
+    else:
+        lista_semillas = [v["seed"] for v in ALBION_DB["hierbas"].values()]
+        item_id_scan = st.selectbox("Elige la Semilla:", lista_semillas)
+
+    if st.button("Lanzar Escáner Definitivo", type="primary"):
+        with st.spinner("Consultando precios y volumen..."):
+            p_data = get_p([item_id_scan]).get(item_id_scan, {})
+            v_data = get_h(item_id_scan)
+            
+            if not p_data and not v_data:
+                st.warning(f"Sin datos recientes para {item_id_scan}. Mercado inactivo.")
+            else:
+                ciudades = ["Brecilien", "Caerleon", "Martlock", "Lymhurst", "Bridgewatch", "Thetford", "Fort_Sterling"]
+                for c in ciudades:
+                    p_venta = p_data.get(c, {}).get('s', 0)
+                    p_compra = p_data.get(c, {}).get('b', 0)
+                    volumen = v_data.get(c, 0)
+                    
+                    st.markdown(f"#### 🏙️ {c.replace('_', ' ')}")
+                    col1, col2, col3 = st.columns(3)
+                    col1.metric("Venta (Más barato)", f"{p_venta:,} s" if p_venta > 0 else "Sin Datos")
+                    col2.metric("Orden Compra (Más caro)", f"{p_compra:,} s" if p_compra > 0 else "Sin Datos")
+                    
+                    if volumen == 0:
+                        col3.error("Volumen 24h: 0 (Muerto)")
+                    elif volumen < 50:
+                        col3.warning(f"Volumen 24h: {volumen:,} (Bajo)")
+                    else:
+                        col3.success(f"Volumen 24h: {volumen:,} (Activo)")
+                    st.divider()
