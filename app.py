@@ -14,18 +14,73 @@ ALBION_DB = {
         "T8_YARROW": {"seed": "T8_FARM_YARROW_SEED", "ret": 0.933}
     },
     "recetas": {
+        # --- CURACIÓN ---
+        "Curación Menor (T2)": {"id": "T2_POTION_HEAL", "rama": "Curación", "foco": 154, "mats": {"T2_AGARIC": 12}},
+        "Curación (T4)": {"id": "T4_POTION_HEAL", "rama": "Curación", "foco": 464, "mats": {"T4_BURDOCK": 24, "T3_EGG": 6}},
         "Curación Mayor (T6)": {"id": "T6_POTION_HEAL", "rama": "Curación", "foco": 1648, "mats": {"T6_FOXGLOVE": 72, "T3_EGG": 18, "T1_ALCOHOL": 18}},
-        "Veneno Mayor (T8)": {"id": "T8_POTION_COOLDOWN", "rama": "Veneno", "foco": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T5_TEASEL": 36, "T8_ALCOHOL": 18, "T6_MILK": 18}},
+        
+        # --- ENERGÍA ---
+        "Energía Menor (T2)": {"id": "T2_POTION_ENERGY", "rama": "Energía", "foco": 154, "mats": {"T2_AGARIC": 12}},
+        "Energía (T4)": {"id": "T4_POTION_ENERGY", "rama": "Energía", "foco": 464, "mats": {"T4_BURDOCK": 24, "T6_MILK": 6}},
+        "Energía Mayor (T6)": {"id": "T6_POTION_ENERGY", "rama": "Energía", "foco": 1648, "mats": {"T6_FOXGLOVE": 72, "T6_MILK": 18, "T1_ALCOHOL": 18}},
+
+        # --- VENENO ---
+        "Veneno Menor (T4)": {"id": "T4_POTION_COOLDOWN", "rama": "Veneno", "foco": 464, "mats": {"T4_BURDOCK": 24, "T2_AGARIC": 12}},
+        "Veneno (T6)": {"id": "T6_POTION_COOLDOWN", "rama": "Veneno", "foco": 1648, "mats": {"T6_FOXGLOVE": 24, "T5_TEASEL": 12, "T3_EGG": 6}},
+        "Veneno Mayor (T8)": {"id": "T8_POTION_COOLDOWN", "rama": "Veneno", "foco": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T5_TEASEL": 36, "T6_MILK": 18, "T8_ALCOHOL": 18}},
+
+        # --- PEGAJOSA ---
+        "Pegajosa Menor (T4)": {"id": "T4_POTION_SLOWFIELD", "rama": "Pegajosa", "foco": 464, "mats": {"T4_BURDOCK": 24, "T2_AGARIC": 12}},
+        "Pegajosa (T6)": {"id": "T6_POTION_SLOWFIELD", "rama": "Pegajosa", "foco": 1648, "mats": {"T6_FOXGLOVE": 24, "T5_TEASEL": 12, "T3_EGG": 6}},
+        "Pegajosa Mayor (T8)": {"id": "T8_POTION_SLOWFIELD", "rama": "Pegajosa", "foco": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T5_TEASEL": 36, "T6_MILK": 18, "T8_ALCOHOL": 18}},
+
+        # --- RESISTENCIA ---
+        "Resistencia Menor (T3)": {"id": "T3_POTION_STONESKIN", "rama": "Resistencia", "foco": 234, "mats": {"T3_COMFREY": 24}},
+        "Resistencia (T5)": {"id": "T5_POTION_STONESKIN", "rama": "Resistencia", "foco": 834, "mats": {"T5_TEASEL": 24, "T3_COMFREY": 12}},
         "Resistencia Mayor (T7)": {"id": "T7_POTION_STONESKIN", "rama": "Resistencia", "foco": 2736, "mats": {"T7_MULLEIN": 72, "T6_FOXGLOVE": 36, "T5_EGG": 18, "T7_ALCOHOL": 18}},
+
+        # --- GIGANTISMO ---
+        "Gigantismo Menor (T3)": {"id": "T3_POTION_REVIVE", "rama": "Gigantismo", "foco": 234, "mats": {"T3_COMFREY": 24}},
+        "Gigantismo (T5)": {"id": "T5_POTION_REVIVE", "rama": "Gigantismo", "foco": 834, "mats": {"T5_TEASEL": 24, "T3_COMFREY": 12}},
+        "Gigantismo Mayor (T7)": {"id": "T7_POTION_REVIVE", "rama": "Gigantismo", "foco": 2736, "mats": {"T7_MULLEIN": 72, "T6_FOXGLOVE": 36, "T5_EGG": 18, "T7_ALCOHOL": 18}},
+
+        # --- INVISIBILIDAD ---
         "Invisibilidad (T8)": {"id": "T8_POTION_INVIS_1", "rama": "Invisibilidad", "foco": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T8_ALCOHOL": 18}},
+
+        # --- RECOLECCIÓN ---
         "Recolección Menor (T4)": {"id": "T4_POTION_GATHER", "rama": "Recolección", "foco": 464, "mats": {"T4_ALCHEMICAL_EXTRACT": 10, "T4_BUTTER": 16, "T3_RUNESTONE_TOOTH": 1}},
         "Recolección (T6)": {"id": "T6_POTION_GATHER", "rama": "Recolección", "foco": 1648, "mats": {"T6_ALCHEMICAL_EXTRACT": 10, "T6_BUTTER": 16, "T5_RUNESTONE_TOOTH": 1}},
         "Recolección Mayor (T8)": {"id": "T8_POTION_GATHER", "rama": "Recolección", "foco": 2736, "mats": {"T8_ALCHEMICAL_EXTRACT": 10, "T8_BUTTER": 16, "T7_RUNESTONE_TOOTH": 1}},
-        "Berserker (T8)": {"id": "T8_POTION_BERSERK", "rama": "Berserker", "foco": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T8_ALCHEMICAL_EXTRACT": 1, "T8_RUNESTONE_TOOTH": 1}},
-        "Ácido (T8)": {"id": "T8_POTION_ACID", "rama": "Ácido", "foco": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T8_ALCHEMICAL_EXTRACT": 1, "T8_RUNESTONE_BONE": 1}},
-        "Tornado (T8)": {"id": "T8_POTION_TORNADO", "rama": "Tornado", "foco": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T8_ALCHEMICAL_EXTRACT": 1, "T8_RUNESTONE_CLAW": 1}},
-        "Fuego Infernal (T8)": {"id": "T8_POTION_HELL", "rama": "Fuego Infernal", "foco": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T8_ALCHEMICAL_EXTRACT": 1, "T8_RUNESTONE_FEATHER": 1}},
-        "Limpieza (T8)": {"id": "T8_POTION_CLEANSE", "rama": "Limpieza", "foco": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T8_ALCHEMICAL_EXTRACT": 1, "T8_RUNESTONE_BEAK": 1}}
+
+        # --- BERSERKER ---
+        "Berserker Menor (T4)": {"id": "T4_POTION_BERSERK", "rama": "Berserker", "foco": 464, "mats": {"T4_BURDOCK": 8, "T4_ALCHEMICAL_EXTRACT": 5, "T3_RUNESTONE_TOOTH": 1}},
+        "Berserker (T6)": {"id": "T6_POTION_BERSERK", "rama": "Berserker", "foco": 1648, "mats": {"T6_FOXGLOVE": 24, "T6_ALCHEMICAL_EXTRACT": 5, "T5_RUNESTONE_TOOTH": 1}},
+        "Berserker Mayor (T8)": {"id": "T8_POTION_BERSERK", "rama": "Berserker", "foco": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T8_ALCHEMICAL_EXTRACT": 5, "T8_RUNESTONE_TOOTH": 1}},
+
+        # --- TORNADO ---
+        "Tornado Menor (T4)": {"id": "T4_POTION_TORNADO", "rama": "Tornado", "foco": 464, "mats": {"T4_BURDOCK": 8, "T4_ALCHEMICAL_EXTRACT": 5, "T3_RUNESTONE_CLAW": 1}},
+        "Tornado (T6)": {"id": "T6_POTION_TORNADO", "rama": "Tornado", "foco": 1648, "mats": {"T6_FOXGLOVE": 24, "T6_ALCHEMICAL_EXTRACT": 5, "T5_RUNESTONE_CLAW": 1}},
+        "Tornado Mayor (T8)": {"id": "T8_POTION_TORNADO", "rama": "Tornado", "foco": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T8_ALCHEMICAL_EXTRACT": 5, "T8_RUNESTONE_CLAW": 1}},
+
+        # --- FUEGO INFERNAL ---
+        "Fuego Infernal Menor (T4)": {"id": "T4_POTION_HELL", "rama": "Fuego Infernal", "foco": 464, "mats": {"T4_BURDOCK": 8, "T4_ALCHEMICAL_EXTRACT": 5, "T3_RUNESTONE_FEATHER": 1}},
+        "Fuego Infernal (T6)": {"id": "T6_POTION_HELL", "rama": "Fuego Infernal", "foco": 1648, "mats": {"T6_FOXGLOVE": 24, "T6_ALCHEMICAL_EXTRACT": 5, "T5_RUNESTONE_FEATHER": 1}},
+        "Fuego Infernal Mayor (T8)": {"id": "T8_POTION_HELL", "rama": "Fuego Infernal", "foco": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T8_ALCHEMICAL_EXTRACT": 5, "T8_RUNESTONE_FEATHER": 1}},
+
+        # --- ÁCIDO ---
+        "Ácido Menor (T3)": {"id": "T3_POTION_ACID", "rama": "Ácido", "foco": 234, "mats": {"T3_COMFREY": 8, "T4_ALCHEMICAL_EXTRACT": 5, "T3_RUNESTONE_BONE": 1}},
+        "Ácido (T5)": {"id": "T5_POTION_ACID", "rama": "Ácido", "foco": 834, "mats": {"T5_TEASEL": 24, "T6_ALCHEMICAL_EXTRACT": 5, "T5_RUNESTONE_BONE": 1}},
+        "Ácido Mayor (T7)": {"id": "T7_POTION_ACID", "rama": "Ácido", "foco": 2736, "mats": {"T7_MULLEIN": 72, "T6_FOXGLOVE": 36, "T8_ALCHEMICAL_EXTRACT": 5, "T7_RUNESTONE_BONE": 1}},
+
+        # --- LIMPIEZA ---
+        "Limpieza Menor (T3)": {"id": "T3_POTION_CLEANSE", "rama": "Limpieza", "foco": 234, "mats": {"T3_COMFREY": 8, "T4_ALCHEMICAL_EXTRACT": 5, "T3_RUNESTONE_BEAK": 1}},
+        "Limpieza (T5)": {"id": "T5_POTION_CLEANSE", "rama": "Limpieza", "foco": 834, "mats": {"T5_TEASEL": 24, "T6_ALCHEMICAL_EXTRACT": 5, "T5_RUNESTONE_BEAK": 1}},
+        "Limpieza Mayor (T7)": {"id": "T7_POTION_CLEANSE", "rama": "Limpieza", "foco": 2736, "mats": {"T7_MULLEIN": 72, "T6_FOXGLOVE": 36, "T8_ALCHEMICAL_EXTRACT": 5, "T7_RUNESTONE_BEAK": 1}},
+
+        # --- CALMANTE ---
+        "Calmante Menor (T3)": {"id": "T3_POTION_CALMING", "rama": "Calmante", "foco": 234, "mats": {"T3_COMFREY": 8, "T4_ALCHEMICAL_EXTRACT": 5, "T3_RUNESTONE_BEAK": 1}},
+        "Calmante (T5)": {"id": "T5_POTION_CALMING", "rama": "Calmante", "foco": 834, "mats": {"T5_TEASEL": 24, "T6_ALCHEMICAL_EXTRACT": 5, "T5_RUNESTONE_BEAK": 1}},
+        "Calmante Mayor (T7)": {"id": "T7_POTION_CALMING", "rama": "Calmante", "foco": 2736, "mats": {"T7_MULLEIN": 72, "T6_FOXGLOVE": 36, "T8_ALCHEMICAL_EXTRACT": 5, "T7_RUNESTONE_BEAK": 1}}
     },
     "esencias": {1: "ARCANEM_EXTRACT_LOW", 2: "ARCANEM_EXTRACT_MEDIUM", 3: "ARCANEM_EXTRACT_HIGH"},
     "ramas": ["Curación", "Energía", "Gigantismo", "Resistencia", "Pegajosa", "Invisibilidad", "Veneno", "Limpieza", "Ácido", "Calmante", "Recolección", "Fuego Infernal", "Berserker", "Tornado", "Destilados"],
@@ -169,7 +224,6 @@ with t3:
     if st.button("Dictar Veredicto de Rentabilidad"):
         valor_crudo = 0
         for m, qb in rec["mats"].items():
-            # Tomamos el precio de venta en Brecilien como referencia para vender en crudo
             p_venta_mat = pg_a.get(m, {}).get("Brecilien", {}).get("s", 0)
             cantidad_gastada = math.ceil((qb * ciclos) * (1 - rrr))
             valor_crudo += (cantidad_gastada * p_venta_mat * (1 - tax_v - s_fee))
