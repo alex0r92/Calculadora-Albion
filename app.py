@@ -137,6 +137,15 @@ with t2:
     
     check_mats = {}
     for mat in ingredientes_producibles:
+    with t3:
+    st.header("📈 Estrategia Cruzada")
+    st.write("¿Plantar o comprar? Comprueba si tu granja es realmente eficiente para esta poción.")
+    
+    mats_pocion = rec["mats"]
+    ingredientes_producibles = [m for m in mats_pocion.keys() if m in ALBION_DB["hierbas"]]
+    
+    check_mats = {}
+    for mat in ingredientes_producibles:
         check_mats[mat] = st.checkbox(f"Tengo granja propia de {mat}", value=False)
     
     if st.button("Analizar Ahorro"):
@@ -145,8 +154,8 @@ with t2:
             if es_propio:
                 # Coste mercado vs Coste producción (aprox según Módulo 1)
                 p_mercado = pg.get(mat, {}).get("Brecilien", {}).get("s", 0)
-                # Estimamos coste semilla/retorno
-                ahorro_unid = p_mercado * 0.4 # Estimación de ahorro neto por unidad producida
+                # Estimamos ahorro neto por unidad producida (Semilla vs Venta planta)
+                ahorro_unid = p_mercado * 0.4 
                 unidades = math.ceil((mats_pocion[mat] * crafteos) * (1 - 0.482))
                 ahorro_total += (unidades * ahorro_unid)
         
