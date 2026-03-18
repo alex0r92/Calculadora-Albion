@@ -146,4 +146,102 @@ with tab1:
             bono_local = 1.1 if hierba_elegida in ALBION_DB["bonos_ciudad"].get(ciudad_cultivo, []) else 1.0
             huecos_totales = parcelas * 9
             cosecha_estimada = math.floor(huecos_totales * 9 * bono_local)
-            semillas_perdidas = math.ceil(huecos_totales * (1 -
+            
+            # Cálculo modificado para evitar líneas súper largas
+            retorno_base = ALBION_DB["hierbas"][hierba_elegida]["return_base"]
+            semillas_perdidas = math.ceil(huecos_totales * (1 - retorno_base))
+            
+            mercados_semillas = {k: v for k, v in precios_globales.get(id_semilla, {}).items() if v.get('sell_min', 0) > 0}
+            c_semilla_opt = min(mercados_semillas, key=lambda k: mercados_semillas[k]['sell_min']) if mercados_semillas else ciudad_cultivo
+            p_semilla_opt = mercados_semillas.get(c_semilla_opt, {}).get('sell_min', 0)
+
+            mercados_hierba = {k: v for k, v in precios_globales.get(hierba_elegida, {}).items() if v.get('sell_min', 0) > 0}
+            c_hierba_opt = max(mercados_hierba, key=lambda k: mercados_hierba[k]['sell_min']) if mercados_hierba else ciudad_cultivo
+            p_hierba_opt = mercados_hierba.get(c_hierba_opt, {}).get('sell_min', 0)
+
+            ingreso_neto = (cosecha_estimada * p_hierba_opt) * (1 - impuesto_total)
+            coste_reposicion = semillas_perdidas * p_semilla_opt
+            beneficio_real = ingreso_neto - coste_reposicion
+            
+            st.success(f"### Beneficio Neto Estimado: {beneficio_real:,.0f} silver diarios")
+            c_res1, c_res2 = st.columns(2)
+            c_res1.metric(f"Vender en {c_hierba_opt}", f"{ingreso_neto:,.0f} silver")
+            c_res2.metric(f"Comprar semillas en {c_semilla_opt}", f"-{coste_reposicion:,.0f} silver")
+
+# --- MÓDULO 2: ALQUIMIA ---
+with tab2:
+    st.header("Escáner de Alquimia (Compra Inteligente)")
+    st.info("Asume que crafteas en Brecilien. La app escaneará todo Albion para decirte dónde comprar cada ingrediente.")
+    
+    c_a1, c_a2, c_a3, c_a4 = st.columns(4)
+    with c_a1: pocion_alq = st.selectbox("Poción:", list(ALBION_DB["recetas"].keys()), key="m2_poc")
+    with c_a2: enc_alq = st.selectbox("Encantamiento:", [0, 1, 2, 3, 4], format_func=lambda x: f".{x}", key="m2_enc")
+    with c_a3: cant_alq = st.number_input("Cantidad de pociones:", min_value=5, step=5, value=1000, key="m2_cant")
+    with c_a4: usar_foco_alq = st.checkbox("Usar Foco en Crafteo", value=True, key="m2_foco")
+    
+    tipo_compra = st.radio("¿Cómo compras los materiales?", ["Compra Directa (Buy from Sell Order)", "Crear Orden de Compra (+2.5% Setup Fee)"])
+
+    if st.button("Escanear Mercado de Alquimia", type="primary"):
+        receta = ALBION_DB["recetas"][pocion_alq]
+        crafteos = math.ceil(cant_alq / 5)
+        rrr = 0.482 if usar_foco_alq else 0.248
+        
+        id_final = f"{receta['id_base']}@{enc_alq}" if enc_alq > 0 else receta['id_base']
+        mats = receta["mats"].copy()
+        if enc_alq > 0:
+            mats[f"{receta['tier_extracto']}_ARCANE_EXTRACT"] = 18 * enc_alq
+            
+        ids_buscar = [id_final] + list(mats.keys())
+        precios_globales = obtener_precios_globales(ids_buscar)
+        
+        if not precios_globales:
+            st.error("Error conectando a la API.")
+        else:
+            coste_total_mats = 0
+            st.markdown("### 🛒 Lista de la Compra Optimizada")
+            
+            for mat, cant_base in mats.items():
+                mat_real = math.ceil((cant_base * crafteos) * (1 - rrr))
+                
+                mercados_mat = {k: v for k, v in precios_globales.get(mat, {}).items() if v.get('sell_min', 0) > 0}
+                if mercados_mat:
+                    ciudad_barata = min(mercados_mat, key=lambda k: mercados_mat[k]['sell_min'])
+                    precio_mat = mercados_mat[ciudad_barata]['sell_min']
+                else:
+                    ciudad_barata = "Desconocida"
+                    precio_mat = 0
+                
+                coste_mat = (mat_real * precio_mat) * (1 + setup_fee) if "Orden de Compra" in tipo_compra else (mat_real * precio_mat)
+                coste_total_mats += coste_mat
+                
+                st.write(f"- **{mat}**: Necesitas {mat_real} uds. -> Cómpralo en **{ciudad_barata.replace('_', ' ')}** (a {precio_mat}s/ud). Coste: {coste_mat:,.0f} s.")
+
+            mercados_pocion = {k: v for k, v in precios_globales.get(id_final, {}).items() if v.get('sell_min', 0) > 0}
+            ciudad_cara = max(mercados_pocion, key=lambda k: mercados_pocion[k]['sell_min']) if mercados_pocion else "Brecilien"
+            precio_venta = mercados_pocion.get(ciudad_cara, {}).get('sell_min', 0)
+            
+            ingreso_neto = (cant_alq * precio_venta) * (1 - tax_venta)
+            beneficio = ingreso_neto - coste_total_mats
+            
+            # Cálculo de eficiencia en varias líneas para que no lo corte GitHub
+            rama = receta["rama"]
+            nodos_extra = sum(v for k, v in specs_usuario.items() if k != rama)
+            eficiencia = (spec_base * 30) + (specs_usuario.get(rama, 0) * 250) + (nodos_extra * 18)
+            foco_total = (receta["foco_base"] * (0.5 ** (eficiencia / 10000))) * crafteos
+            
+            st.markdown("---")
+            c_res1, c_res2, c_res3 = st.columns(3)
+            c_res1.metric(f"Ingreso (Vendiendo en {ciudad_cara})", f"{ingreso_neto:,.0f} s")
+            c_res2.metric("Beneficio Limpio", f"{beneficio:,.0f} s")
+            c_res3.metric("Coste de Foco Total", f"{foco_total:,.0f} pts")
+
+# --- MÓDULO 3: ESTRATEGIA CRUZADA ---
+with tab3:
+    st.header("Autosuficiencia vs Comprar Todo")
+    c_e1, c_e2 = st.columns(2)
+    with c_e1: pocion_est = st.selectbox("Meta de crafteo:", list(ALBION_DB["recetas"].keys()), key="m3_poc")
+    with c_e2: ciudad_isla = st.selectbox("¿Dónde tienes tu isla?", ["Martlock", "Caerleon", "Lymhurst", "Bridgewatch", "Thetford", "Fort_Sterling"], key="m3_isla")
+
+    if st.button("Comparar Rutas Logísticas"):
+        st.info("💡 En proceso de carga... Esta comparativa evaluará el coste de comprar las semillas para tu isla vs comprar los materiales directamente de las órdenes de venta calculadas en el Módulo 2.")
+        st.success("Toda la infraestructura está lista. Revisa los módulos 1 y 2, y asegúrate de que todo conecta perfectamente.")
