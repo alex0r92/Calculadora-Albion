@@ -55,19 +55,15 @@ def obtener_precios_globales(lista_ids):
             resultados = {}
             for item in data.json():
                 ciudad_item = item['city']
-                if ciudad_item == "Fort Sterling": 
-                    ciudad_item = "Fort_Sterling" 
+                if ciudad_item == "Fort Sterling": ciudad_item = "Fort_Sterling" 
                 
                 item_id = item['item_id']
-                p_venta = item['sell_price_min']
-                p_compra = item['buy_price_max']
-                
-                if p_venta > 0 or p_compra > 0:
+                if item['sell_price_min'] > 0 or item['buy_price_max'] > 0:
                     if item_id not in resultados:
                         resultados[item_id] = {}
                     resultados[item_id][ciudad_item] = {
-                        "sell_min": p_venta,
-                        "buy_max": p_compra
+                        "sell_min": item['sell_price_min'],
+                        "buy_max": item['buy_price_max']
                     }
             return resultados
         return {}
@@ -155,4 +151,105 @@ with tab1:
             semillas_perdidas = math.ceil(huecos_totales * (1 - retorno_base))
             
             mercados_semillas = {k: v for k, v in precios_globales.get(id_semilla, {}).items() if v.get('sell_min', 0) > 0}
-            c_sem
+            c_semilla_opt = min(mercados_semillas, key=lambda k: mercados_semillas[k]['sell_min']) if mercados_semillas else ciudad_cultivo
+            p_semilla_opt = mercados_semillas.get(c_semilla_opt, {}).get('sell_min', 0)
+
+            mercados_hierba = {k: v for k, v in precios_globales.get(hierba_elegida, {}).items() if v.get('sell_min', 0) > 0}
+            c_hierba_opt = max(mercados_hierba, key=lambda k: mercados_hierba[k]['sell_min']) if mercados_hierba else ciudad_cultivo
+            p_hierba_opt = mercados_hierba.get(c_hierba_opt, {}).get('sell_min', 0)
+
+            ingreso_neto = (cosecha_estimada * p_hierba_opt) * (1 - impuesto_total)
+            coste_reposicion = semillas_perdidas * p_semilla_opt
+            beneficio_real = ingreso_neto - coste_reposicion
+            
+            st.success(f"### Beneficio Neto Estimado: {beneficio_real:,.0f} silver diarios")
+            st.caption(f"🌱 **Retorno de semillas del {retorno_base*100:.1f}%:** Solo necesitas comprar {semillas_perdidas} uds para reponer los {huecos_totales} huecos plantados.")
+            
+            c_res1, c_res2 = st.columns(2)
+            c_res1.metric(f"Vender en {c_hierba_opt.replace('_', ' ')}", f"{ingreso_neto:,.0f} silver")
+            c_res2.metric(f"Comprar semillas en {c_semilla_opt.replace('_', ' ')}", f"-{coste_reposicion:,.0f} silver")
+
+            with st.expander("🌍 Ver precios de la cosecha en otras ciudades"):
+                st.markdown(f"**Precios de Venta (Sell Order) para {hierba_elegida}:**")
+                for ciudad, datos in mercados_hierba.items():
+                    if ciudad != c_hierba_opt:
+                        st.write(f"- {ciudad.replace('_', ' ')}: {datos['sell_min']} silver")
+            
+            with st.expander("🌍 Ver precios de semillas en otras ciudades"):
+                st.markdown(f"**Precios de Compra (Sell Order) para la semilla:**")
+                for ciudad, datos in mercados_semillas.items():
+                    if ciudad != c_semilla_opt:
+                        st.write(f"- {ciudad.replace('_', ' ')}: {datos['sell_min']} silver")
+
+            datos_hist_hierba = obtener_historial_24h(hierba_elegida, c_hierba_opt)
+            with st.expander(f"📊 Ver volumen y liquidez en el mercado óptimo ({c_hierba_opt.replace('_', ' ')})"):
+                c1, c2, c3, c4 = st.columns(4)
+                c1.metric("Orden de Venta (Sell)", f"{mercados_hierba.get(c_hierba_opt, {}).get('sell_min', 0)} s")
+                c2.metric("Orden de Compra (Buy)", f"{mercados_hierba.get(c_hierba_opt, {}).get('buy_max', 0)} s")
+                c3.metric("Precio Medio (24h)", f"{datos_hist_hierba['precio_medio']:.1f} s")
+                c4.metric("Volumen Movido (24h)", f"{datos_hist_hierba['volumen']:,} uds")
+
+# --- MÓDULO 2: ALQUIMIA ---
+with tab2:
+    st.header("Escáner de Alquimia (Compra Inteligente)")
+    st.info("Asume que crafteas en Brecilien. La app escaneará todo Albion para decirte dónde comprar cada ingrediente.")
+    
+    c_a1, c_a2, c_a3, c_a4 = st.columns(4)
+    with c_a1: pocion_alq = st.selectbox("Poción:", list(ALBION_DB["recetas"].keys()), key="m2_poc")
+    with c_a2: enc_alq = st.selectbox("Encantamiento:", [0, 1, 2, 3, 4], format_func=lambda x: f".{x}", key="m2_enc")
+    with c_a3: cant_alq = st.number_input("Cantidad de pociones:", min_value=5, step=5, value=1000, key="m2_cant")
+    with c_a4: usar_foco_alq = st.checkbox("Usar Foco en Crafteo", value=True, key="m2_foco")
+    
+    tipo_compra = st.radio("¿Cómo compras los materiales?", ["Compra Directa (Buy from Sell Order)", "Crear Orden de Compra (+2.5% Setup Fee)"])
+
+    if st.button("Escanear Mercado de Alquimia", type="primary"):
+        receta = ALBION_DB["recetas"][pocion_alq]
+        crafteos = math.ceil(cant_alq / 5)
+        rrr = 0.482 if usar_foco_alq else 0.248
+        
+        id_final = f"{receta['id_base']}@{enc_alq}" if enc_alq > 0 else receta['id_base']
+        mats = receta["mats"].copy()
+        if enc_alq > 0:
+            mats[f"{receta['tier_extracto']}_ARCANE_EXTRACT"] = 18 * enc_alq
+            
+        ids_buscar = [id_final] + list(mats.keys())
+        precios_globales = obtener_precios_globales(ids_buscar)
+        
+        if not precios_globales:
+            st.error("Error conectando a la API.")
+        else:
+            coste_total_mats = 0
+            st.markdown("### 🛒 Lista de la Compra Optimizada")
+            
+            for mat, cant_base in mats.items():
+                mat_real = math.ceil((cant_base * crafteos) * (1 - rrr))
+                
+                mercados_mat = {k: v for k, v in precios_globales.get(mat, {}).items() if v.get('sell_min', 0) > 0}
+                if mercados_mat:
+                    ciudad_barata = min(mercados_mat, key=lambda k: mercados_mat[k]['sell_min'])
+                    precio_mat = mercados_mat[ciudad_barata]['sell_min']
+                else:
+                    ciudad_barata = "Desconocida"
+                    precio_mat = 0
+                
+                coste_mat = (mat_real * precio_mat) * (1 + setup_fee) if "Orden de Compra" in tipo_compra else (mat_real * precio_mat)
+                coste_total_mats += coste_mat
+                
+                st.write(f"- **{mat}**: Necesitas {mat_real} uds. -> Óptimo: **{ciudad_barata.replace('_', ' ')}** a {precio_mat}s. (Total: {coste_mat:,.0f} s)")
+                
+                with st.expander(f"Ver precios de {mat} en otras ciudades"):
+                    for ciudad, datos in mercados_mat.items():
+                        if ciudad != ciudad_barata:
+                            st.write(f"  - {ciudad.replace('_', ' ')}: {datos['sell_min']} silver")
+
+            mercados_pocion = {k: v for k, v in precios_globales.get(id_final, {}).items() if v.get('sell_min', 0) > 0}
+            ciudad_cara = max(mercados_pocion, key=lambda k: mercados_pocion[k]['sell_min']) if mercados_pocion else "Brecilien"
+            precio_venta = mercados_pocion.get(ciudad_cara, {}).get('sell_min', 0)
+            
+            ingreso_neto = (cant_alq * precio_venta) * (1 - tax_venta)
+            beneficio = ingreso_neto - coste_total_mats
+            
+            rama = receta["rama"]
+            nodos_extra = sum(v for k, v in specs_usuario.items() if k != rama)
+            eficiencia = (spec_base * 30) + (specs_usuario.get(rama, 0) * 250) + (nodos_extra * 18)
+            foco_total = (receta["foco_base"] * (0.5 ** (eficiencia / 10
