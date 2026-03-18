@@ -35,12 +35,7 @@ ALBION_DB = {
         "Veneno Mayor (T8)": {"id_base": "T8_POTION_COOLDOWN", "tier_extracto": "T8", "rama": "Veneno", "foco_base": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T5_TEASEL": 36, "T6_MILK": 18, "T8_ALCOHOL": 18}},
         "Invisibilidad (T8)": {"id_base": "T8_POTION_INVISIBILITY", "tier_extracto": "T8", "rama": "Invisibilidad", "foco_base": 2736, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T5_TEASEL": 36, "T6_MILK": 18, "T8_ALCOHOL": 18}}
     }
-}
-
-# ==========================================
-# 2. CONECTORES A LA API
-# ==========================================
-@st.cache_data(ttl=60)
+}@st.cache_data(ttl=60)
 def obtener_precios_globales(lista_ids):
     if not lista_ids: return {}
     ciudades = "Martlock,Caerleon,Lymhurst,Bridgewatch,Thetford,Fort_Sterling,Brecilien"
@@ -48,20 +43,16 @@ def obtener_precios_globales(lista_ids):
     try:
         data = requests.get(url, timeout=10)
         if data.status_code == 200:
-            resultados = {}
-            for item in data.json():
-                ciudad_item = "Fort_Sterling" if item['city'] == "Fort Sterling" else item['city']
-                item_id = item['item_id']
-                if item['sell_price_min'] > 0 or item['buy_price_max'] > 0:
-                    if item_id not in resultados: resultados[item_id] = {}
-                    resultados[item_id][ciudad_item] = {
-                        "sell_min": item['sell_price_min'],
-                        "buy_max": item['buy_price_max']
-                    }
-            return resultados
+            res = {}
+            for it in data.json():
+                c = "Fort_Sterling" if it['city'] == "Fort Sterling" else it['city']
+                i = it['item_id']
+                if it['sell_price_min'] > 0 or it['buy_price_max'] > 0:
+                    if i not in res: res[i] = {}
+                    res[i][c] = {"sell": it['sell_price_min'], "buy": it['buy_price_max']}
+            return res
         return {}
-    except:
-        return {}
+    except: return {}
 
 @st.cache_data(ttl=300)
 def obtener_historial_24h(item_id, ciudad):
@@ -69,32 +60,21 @@ def obtener_historial_24h(item_id, ciudad):
     try:
         data = requests.get(url, timeout=10)
         if data.status_code == 200 and len(data.json()) > 0:
-            historial = data.json()[0].get('data', [])
-            if historial:
-                return {
-                    "precio_medio": historial[-1].get('average_price', 0),
-                    "volumen": historial[-1].get('item_count', 0)
-                }
-        return {"precio_medio": 0, "volumen": 0}
-    except:
-        return {"precio_medio": 0, "volumen": 0}
+            h = data.json()[0].get('data', [])
+            if h: return {"med": h[-1].get('average_price', 0), "vol": h[-1].get('item_count', 0)}
+        return {"med": 0, "vol": 0}
+    except: return {"med": 0, "vol": 0}
 
-# ==========================================
-# 3. INTERFAZ Y MÓDULOS
-# ==========================================
 st.set_page_config(page_title="Albion Market Terminal", layout="wide")
 st.title("⚖️ Terminal de Mercado y Logística")
 
-# --- MÓDULO 0: PERFIL GLOBAL ---
-st.sidebar.header("Módulo 0: Tu Perfil")
-premium = st.sidebar.checkbox("Premium Activo (Tax 4%)", value=True)
-tax_venta = 0.04 if premium else 0.08
-setup_fee = 0.025 
-
-st.sidebar.subheader("Specs de Alquimia")
-spec_base = st.sidebar.slider("Alquimista (Base)", 0, 100, 100)
-with st.sidebar.expander("Tus 15 Ramas de Pociones"):
-    specs_usuario = {
+st.sidebar.header("Módulo 0: Perfil")
+premium = st.sidebar.checkbox("Premium Activo", value=True)
+tax_v = 0.04 if premium else 0.08
+s_fee = 0.025
+spec_b = st.sidebar.slider("Alquimista (Base)", 0, 100, 100)
+with st.sidebar.expander("Specs de Pociones"):
+    specs = {
         "Curación": st.slider("Curación", 0, 100, 100), "Energía": st.slider("Energía", 0, 100, 0),
         "Gigantismo": st.slider("Gigantismo", 0, 100, 0), "Resistencia": st.slider("Resistencia", 0, 100, 0),
         "Pegajosa": st.slider("Pegajosa", 0, 100, 0), "Invisibilidad": st.slider("Invisibilidad", 0, 100, 0),
@@ -105,75 +85,87 @@ with st.sidebar.expander("Tus 15 Ramas de Pociones"):
         "Destilados": st.slider("Destilados", 0, 100, 0)
     }
 
-tab1, tab2, tab3 = st.tabs(["🌱 1. Cultivos", "🧪 2. Alquimia Inteligente", "📈 3. Estrategia Cruzada"])
+t1, t2, t3 = st.tabs(["🌱 1. Cultivos", "🧪 2. Alquimia Inteligente", "📈 3. Estrategia Cruzada"])
+with t1:
+    st.header("Rentabilidad Agrícola")
+    c1, c2, c3 = st.columns(3)
+    with c1: ciu_c = st.selectbox("Ciudad isla:", ["Martlock", "Caerleon", "Lymhurst", "Bridgewatch", "Thetford", "Fort_Sterling", "Brecilien"])
+    with c2: hie_e = st.selectbox("Hierba:", list(ALBION_DB["hierbas"].keys()))
+    with c3: parc = st.number_input("Parcelas:", min_value=1, value=10)
 
-# --- MÓDULO 1: CULTIVOS ---
-with tab1:
-    st.header("Análisis de Rentabilidad Agrícola")
-    col_c1, col_c2, col_c3 = st.columns(3)
-    with col_c1: ciudad_cultivo = st.selectbox("Ciudad de tu isla:", ["Martlock", "Caerleon", "Lymhurst", "Bridgewatch", "Thetford", "Fort_Sterling", "Brecilien"])
-    with col_c2: hierba_elegida = st.selectbox("Hierba a plantar:", list(ALBION_DB["hierbas"].keys()))
-    with col_c3: parcelas = st.number_input("Número de Parcelas:", min_value=1, value=10)
+    t_v = st.radio("Venta:", ["Directa", "Orden (+2.5%)"])
+    imp_t = tax_v if "Directa" in t_v else (tax_v + s_fee)
 
-    tipo_venta = st.radio("Venta de la cosecha:", ["Venta Directa (Solo Tax)", "Crear Orden de Venta (+2.5% Setup Fee)"])
-    impuesto_total = tax_venta if "Venta Directa" in tipo_venta else (tax_venta + setup_fee)
-
-    if st.button("Ejecutar Análisis de Granja"):
-        id_semilla = ALBION_DB["hierbas"][hierba_elegida]["seed"]
-        precios_globales = obtener_precios_globales([hierba_elegida, id_semilla])
-        
-        if not precios_globales:
-            st.error("Error conectando a la API.")
-        else:
-            bono_local = 1.1 if hierba_elegida in ALBION_DB["bonos_ciudad"].get(ciudad_cultivo, []) else 1.0
-            huecos_totales = parcelas * 9
-            cosecha_estimada = math.floor(huecos_totales * 9 * bono_local)
+    if st.button("Calcular Granja"):
+        id_s = ALBION_DB["hierbas"][hie_e]["seed"]
+        pg = obtener_precios_globales([hie_e, id_s])
+        if pg:
+            bono = 1.1 if hie_e in ALBION_DB["bonos_ciudad"].get(ciu_c, []) else 1.0
+            h_tot = parc * 9
+            cos_est = math.floor(h_tot * 9 * bono)
+            ret_b = ALBION_DB["hierbas"][hie_e]["return_base"]
+            s_perd = math.ceil(h_tot * (1 - ret_b))
             
-            retorno_base = ALBION_DB["hierbas"][hierba_elegida]["return_base"]
-            semillas_perdidas = math.ceil(huecos_totales * (1 - retorno_base))
-            
-            mercados_semillas = {k: v for k, v in precios_globales.get(id_semilla, {}).items() if v.get('sell_min', 0) > 0}
-            c_semilla_opt = min(mercados_semillas, key=lambda k: mercados_semillas[k]['sell_min']) if mercados_semillas else ciudad_cultivo
-            p_semilla_opt = mercados_semillas.get(c_semilla_opt, {}).get('sell_min', 0)
+            m_s = {k: v for k, v in pg.get(id_s, {}).items() if v['sell'] > 0}
+            c_s_o = min(m_s, key=lambda k: m_s[k]['sell']) if m_s else ciu_c
+            p_s_o = m_s.get(c_s_o, {}).get('sell', 0)
 
-            mercados_hierba = {k: v for k, v in precios_globales.get(hierba_elegida, {}).items() if v.get('sell_min', 0) > 0}
-            c_hierba_opt = max(mercados_hierba, key=lambda k: mercados_hierba[k]['sell_min']) if mercados_hierba else ciudad_cultivo
-            p_hierba_opt = mercados_hierba.get(c_hierba_opt, {}).get('sell_min', 0)
+            m_h = {k: v for k, v in pg.get(hie_e, {}).items() if v['sell'] > 0}
+            c_h_o = max(m_h, key=lambda k: m_h[k]['sell']) if m_h else ciu_c
+            p_h_o = m_h.get(c_h_o, {}).get('sell', 0)
 
-            ingreso_neto = (cosecha_estimada * p_hierba_opt) * (1 - impuesto_total)
-            coste_reposicion = semillas_perdidas * p_semilla_opt
-            beneficio_real = ingreso_neto - coste_reposicion
-            
-            st.success(f"### Beneficio Neto Estimado: {beneficio_real:,.0f} silver diarios")
-            st.caption(f"🌱 **Retorno de semillas del {retorno_base*100:.1f}%:** Solo necesitas comprar {semillas_perdidas} uds para reponer los {huecos_totales} huecos plantados.")
-            
-            c_res1, c_res2 = st.columns(2)
-            c_res1.metric(f"Vender en {c_hierba_opt.replace('_', ' ')}", f"{ingreso_neto:,.0f} silver")
-            c_res2.metric(f"Comprar semillas en {c_semilla_opt.replace('_', ' ')}", f"-{coste_reposicion:,.0f} silver")
-
-            with st.expander("🌍 Ver precios de la cosecha en otras ciudades"):
-                for ciudad, datos in mercados_hierba.items():
-                    if ciudad != c_hierba_opt: st.write(f"- {ciudad.replace('_', ' ')}: {datos['sell_min']} silver")
-            
-            with st.expander("🌍 Ver precios de semillas en otras ciudades"):
-                for ciudad, datos in mercados_semillas.items():
-                    if ciudad != c_semilla_opt: st.write(f"- {ciudad.replace('_', ' ')}: {datos['sell_min']} silver")
-
-            datos_hist_hierba = obtener_historial_24h(hierba_elegida, c_hierba_opt)
-            with st.expander(f"📊 Ver volumen y liquidez en el mercado óptimo ({c_hierba_opt.replace('_', ' ')})"):
-                c1, c2, c3, c4 = st.columns(4)
-                c1.metric("Orden de Venta (Sell)", f"{mercados_hierba.get(c_hierba_opt, {}).get('sell_min', 0)} s")
-                c2.metric("Orden de Compra (Buy)", f"{mercados_hierba.get(c_hierba_opt, {}).get('buy_max', 0)} s")
-                c3.metric("Precio Medio (24h)", f"{datos_hist_hierba['precio_medio']:.1f} s")
-                c4.metric("Volumen Movido", f"{datos_hist_hierba['volumen']:,} uds")
-
-# --- MÓDULO 2: ALQUIMIA ---
-with tab2:
-    st.header("Escáner de Alquimia (Compra Inteligente)")
-    st.info("Asume que crafteas en Brecilien. La app escaneará todo Albion para decirte dónde comprar cada ingrediente.")
+            i_neto = (cos_est * p_h_o) * (1 - imp_t)
+            c_rep = s_perd * p_s_o
+            st.success(f"### Beneficio: {i_neto - c_rep:,.0f} silver/día")
+            st.caption(f"Retorno: {ret_b*100:.1f}%. Repones {s_perd} semillas.")
+            r1, r2 = st.columns(2)
+            r1.metric(f"Venta en {c_h_o}", f"{i_neto:,.0f} s")
+            r2.metric(f"Semillas en {c_s_o}", f"-{c_rep:,.0f} s")
+            with t2:
+    st.header("Alquimia Inteligente")
+    a1, a2, a3, a4 = st.columns(4)
+    with a1: p_alq = st.selectbox("Poción:", list(ALBION_DB["recetas"].keys()))
+    with a2: e_alq = st.selectbox("Encantamiento:", [0,1,2,3,4], format_func=lambda x: f".{x}")
+    with a3: q_alq = st.number_input("Cantidad:", min_value=5, step=5, value=1000)
+    with a4: f_alq = st.checkbox("Foco", value=True)
     
-    c_a1, c_a2, c_a3, c_a4 = st.columns(4)
-    with c_a1: pocion_alq = st.selectbox("Poción:", list(ALBION_DB["recetas"].keys()), key="m2_poc")
-    with c_a2: enc_alq = st.selectbox("Encantamiento:", [0, 1, 2, 3, 4], format_func=lambda x: f".{x}", key="m2_enc")
-    with c_a3: cant_alq = st.number_input("Cantidad de pociones:", min_value=5, step=5, value=1000, key="m2_cant")
-    with c_a4: usar_foco_
+    t_c = st.radio("Compra:", ["Directa", "Orden (+2.5%)"])
+
+    if st.button("Escanear Alquimia"):
+        rec = ALBION_DB["recetas"][p_alq]
+        crf = math.ceil(q_alq / 5)
+        rrr = 0.482 if f_alq else 0.248
+        id_f = f"{rec['id_base']}@{e_alq}" if e_alq > 0 else rec['id_base']
+        m_list = rec["mats"].copy()
+        if e_alq > 0: m_list[f"{rec['tier_extracto']}_ARCANE_EXTRACT"] = 18 * e_alq
+        pg = obtener_precios_globales([id_f] + list(m_list.keys()))
+        if pg:
+            c_m_t = 0
+            for m, qb in m_list.items():
+                qr = math.ceil((qb * crf) * (1 - rrr))
+                m_m = {k: v for k, v in pg.get(m, {}).items() if v['sell'] > 0}
+                ciu_b = min(m_m, key=lambda k: m_m[k]['sell']) if m_m else "N/A"
+                p_m = m_m.get(ciu_b, {}).get('sell', 0)
+                cost = (qr * p_m) * (1.025 if "Orden" in t_c else 1)
+                c_m_t += cost
+                st.write(f"- {m}: {qr} uds en **{ciu_b}** ({cost:,.0f} s)")
+            
+            m_p = {k: v for k, v in pg.get(id_f, {}).items() if v['sell'] > 0}
+            ciu_c = max(m_p, key=lambda k: m_p[k]['sell']) if m_p else "Brecilien"
+            p_v = m_p.get(ciu_c, {}).get('sell', 0)
+            i_n = (q_alq * p_v) * (1 - tax_v)
+            
+            ram = rec["rama"]
+            n_ex = sum(v for k, v in specs.items() if k != ram)
+            efi = (spec_b * 30) + (specs.get(ram, 0) * 250) + (n_ex * 18)
+            f_t = (rec["foco_base"] * (0.5**(efi/10000))) * crf
+            
+            st.markdown("---")
+            res1, res2, res3 = st.columns(3)
+            res1.metric(f"Ingreso ({ciu_c})", f"{i_n:,.0f} s")
+            res2.metric("Beneficio", f"{i_n - c_m_t:,.0f} s")
+            res3.metric("Foco Total", f"{f_t:,.0f} pts")
+
+with t3:
+    st.header("Estrategia Cruzada")
+    st.write("Módulo en construcción. Usa las pestañas 1 y 2 para comparar manualmente por ahora.")
