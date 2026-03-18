@@ -74,14 +74,36 @@ with t1:
             h_tot = parc * 9
             cos_est = math.floor(h_tot * 9 * bono)
             s_perd = math.ceil(h_tot * (1 - info["ret"]))
-            m_h = pg.get(hie_e, {}); cv_o = max(m_h, key=lambda k: m_h[k]['s']) if m_h else ciu_c
-            m_s = pg.get(info["seed"], {}); cc_o = min(m_s, key=lambda k: m_s[k]['s']) if m_s else ciu_c
-            ing = (cos_est * m_h.get(cv_o, {}).get('s', 0)) * (1-tax_v-setup_fee)
-            cst = s_perd * m_s.get(cc_o, {}).get('s', 0)
-            st.success(f"Beneficio Diario: {ing - cst:,.0f} s")
-            st.info(f"Retorno: {info['ret']*100:.1f}% | Repones {s_perd} semillas.")
-            with st.expander("Ver mercados"): st.write(m_h)
-
+            
+            # Datos de Hierba y Semilla
+            m_h = pg.get(hie_e, {})
+            m_s = pg.get(info["seed"], {})
+            
+            # Cálculo de Mejores Mercados
+            cv_o = max(m_h, key=lambda k: m_h[k]['s']) if m_h else ciu_c
+            cc_o = min(m_s, key=lambda k: m_s[k]['s']) if m_s else ciu_c
+            
+            p_venta = m_h.get(cv_o, {}).get('s', 0)
+            p_semilla = m_s.get(cc_o, {}).get('s', 0)
+            
+            ing = (cos_est * p_venta) * (1 - tax_v - setup_fee)
+            cst = s_perd * p_semilla
+            
+            # --- INTERFAZ MEJORADA ---
+            st.success(f"### Beneficio Neto: {ing - cst:,.0f} silver")
+            
+            col_res1, col_res2 = st.columns(2)
+            col_res1.warning(f"📍 **Vender Hierba en:** {cv_o.replace('_',' ')}")
+            col_res2.info(f"🛒 **Comprar Semillas en:** {cc_o.replace('_',' ')}")
+            
+            with st.expander("📊 Desglose de precios por ciudad"):
+                tab_v, tab_s = st.tabs(["Precios Hierba (Venta)", "Precios Semilla (Compra)"])
+                with tab_v:
+                    for c, d in m_h.items():
+                        st.write(f"**{c.replace('_',' ')}**: {d['s']:,} s (Orden Compra: {d['b']:,} s)")
+                with tab_s:
+                    for c, d in m_s.items():
+                        st.write(f"**{c.replace('_',' ')}**: {d['s']:,} s (Orden Compra: {d['b']:,} s)")
 # --- MODULO 2: ALQUIMIA PRO ---
 with t2:
     st.header("Calculadora Avanzada")
