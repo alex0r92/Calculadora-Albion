@@ -2,43 +2,19 @@ import streamlit as st
 import requests
 import math
 
-# --- 1. BASE DE DATOS MAESTRA ---
+# --- 1. BASE DE DATOS COMPRIMIDA (ALBION EU) ---
 DB = {
-    "hierbas": {
-        "T2_AGARIC": {"seed": "T2_FARM_AGARIC_SEED", "ret": 0.333},
-        "T3_COMFREY": {"seed": "T3_FARM_COMFREY_SEED", "ret": 0.600},
-        "T4_BURDOCK": {"seed": "T4_FARM_BURDOCK_SEED", "ret": 0.733},
-        "T5_TEASEL": {"seed": "T5_FARM_TEASEL_SEED", "ret": 0.800},
-        "T6_FOXGLOVE": {"seed": "T6_FARM_FOXGLOVE_SEED", "ret": 0.866},
-        "T7_MULLEIN": {"seed": "T7_FARM_MULLEIN_SEED", "ret": 0.911},
-        "T8_YARROW": {"seed": "T8_FARM_YARROW_SEED", "ret": 0.933}
-    },
+    "hierbas": {"T2_AGARIC": {"seed": "T2_FARM_AGARIC_SEED", "ret": 0.333}, "T3_COMFREY": {"seed": "T3_FARM_COMFREY_SEED", "ret": 0.600}, "T4_BURDOCK": {"seed": "T4_FARM_BURDOCK_SEED", "ret": 0.733}, "T5_TEASEL": {"seed": "T5_FARM_TEASEL_SEED", "ret": 0.800}, "T6_FOXGLOVE": {"seed": "T6_FARM_FOXGLOVE_SEED", "ret": 0.866}, "T7_MULLEIN": {"seed": "T7_FARM_MULLEIN_SEED", "ret": 0.911}, "T8_YARROW": {"seed": "T8_FARM_YARROW_SEED", "ret": 0.933}},
     "recetas": {
-        "Curación Menor (T4)": {"id": "T4_POTION_HEAL", "rama": "Curación", "foco": 1200, "mats": {"T4_BURDOCK": 24, "T2_AGARIC": 12}},
-        "Curación Mayor (T6)": {"id": "T6_POTION_HEAL", "rama": "Curación", "foco": 3000, "mats": {"T6_FOXGLOVE": 72, "T5_EGG": 18, "T6_ALCOHOL": 18}},
-        "Energía Menor (T4)": {"id": "T4_POTION_ENERGY", "rama": "Energía", "foco": 1200, "mats": {"T4_BURDOCK": 24, "T2_AGARIC": 12}},
-        "Energía Mayor (T6)": {"id": "T6_POTION_ENERGY", "rama": "Energía", "foco": 3000, "mats": {"T6_FOXGLOVE": 72, "T6_MILK": 18, "T6_ALCOHOL": 18}},
-        "Veneno Menor (T4)": {"id": "T4_POTION_COOLDOWN", "rama": "Veneno", "foco": 1200, "mats": {"T4_BURDOCK": 24, "T2_AGARIC": 12}},
-        "Veneno (T6)": {"id": "T6_POTION_COOLDOWN", "rama": "Veneno", "foco": 3000, "mats": {"T6_FOXGLOVE": 24, "T5_TEASEL": 12, "T3_COMFREY": 12, "T6_MILK": 6}},
-        "Veneno Mayor (T8)": {"id": "T8_POTION_COOLDOWN", "rama": "Veneno", "foco": 6000, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T5_TEASEL": 36, "T8_MILK": 18, "T8_ALCOHOL": 18}},
-        "Pegajosa Menor (T4)": {"id": "T4_POTION_SLOWFIELD", "rama": "Pegajosa", "foco": 1200, "mats": {"T4_BURDOCK": 24, "T2_AGARIC": 12}},
-        "Pegajosa (T6)": {"id": "T6_POTION_SLOWFIELD", "rama": "Pegajosa", "foco": 3000, "mats": {"T6_FOXGLOVE": 24, "T5_TEASEL": 12, "T3_COMFREY": 12, "T6_MILK": 6}},
-        "Pegajosa Mayor (T8)": {"id": "T8_POTION_SLOWFIELD", "rama": "Pegajosa", "foco": 6000, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T5_TEASEL": 36, "T8_MILK": 18, "T8_ALCOHOL": 18}},
-        "Resistencia Menor (T3)": {"id": "T3_POTION_STONESKIN", "rama": "Resistencia", "foco": 600, "mats": {"T3_COMFREY": 24}},
-        "Resistencia (T5)": {"id": "T5_POTION_STONESKIN", "rama": "Resistencia", "foco": 2000, "mats": {"T5_TEASEL": 24, "T3_COMFREY": 12}},
-        "Resistencia Mayor (T7)": {"id": "T7_POTION_STONESKIN", "rama": "Resistencia", "foco": 4600, "mats": {"T7_MULLEIN": 72, "T6_FOXGLOVE": 36, "T5_EGG": 18, "T7_ALCOHOL": 18}},
-        "Gigantismo Menor (T3)": {"id": "T3_POTION_REVIVE", "rama": "Gigantismo", "foco": 600, "mats": {"T3_COMFREY": 24}},
-        "Gigantismo (T5)": {"id": "T5_POTION_REVIVE", "rama": "Gigantismo", "foco": 2000, "mats": {"T5_TEASEL": 24, "T3_COMFREY": 12}},
-        "Gigantismo Mayor (T7)": {"id": "T7_POTION_REVIVE", "rama": "Gigantismo", "foco": 4600, "mats": {"T7_MULLEIN": 72, "T6_FOXGLOVE": 36, "T5_EGG": 18, "T7_ALCOHOL": 18}},
+        "Curación Menor (T4)": {"id": "T4_POTION_HEAL", "rama": "Curación", "foco": 1200, "mats": {"T4_BURDOCK": 24, "T2_AGARIC": 12}}, "Curación Mayor (T6)": {"id": "T6_POTION_HEAL", "rama": "Curación", "foco": 3000, "mats": {"T6_FOXGLOVE": 72, "T5_EGG": 18, "T6_ALCOHOL": 18}},
+        "Energía Menor (T4)": {"id": "T4_POTION_ENERGY", "rama": "Energía", "foco": 1200, "mats": {"T4_BURDOCK": 24, "T2_AGARIC": 12}}, "Energía Mayor (T6)": {"id": "T6_POTION_ENERGY", "rama": "Energía", "foco": 3000, "mats": {"T6_FOXGLOVE": 72, "T6_MILK": 18, "T6_ALCOHOL": 18}},
+        "Veneno Menor (T4)": {"id": "T4_POTION_COOLDOWN", "rama": "Veneno", "foco": 1200, "mats": {"T4_BURDOCK": 24, "T2_AGARIC": 12}}, "Veneno (T6)": {"id": "T6_POTION_COOLDOWN", "rama": "Veneno", "foco": 3000, "mats": {"T6_FOXGLOVE": 24, "T5_TEASEL": 12, "T3_COMFREY": 12, "T6_MILK": 6}}, "Veneno Mayor (T8)": {"id": "T8_POTION_COOLDOWN", "rama": "Veneno", "foco": 6000, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T5_TEASEL": 36, "T8_MILK": 18, "T8_ALCOHOL": 18}},
+        "Pegajosa Menor (T4)": {"id": "T4_POTION_SLOWFIELD", "rama": "Pegajosa", "foco": 1200, "mats": {"T4_BURDOCK": 24, "T2_AGARIC": 12}}, "Pegajosa (T6)": {"id": "T6_POTION_SLOWFIELD", "rama": "Pegajosa", "foco": 3000, "mats": {"T6_FOXGLOVE": 24, "T5_TEASEL": 12, "T3_COMFREY": 12, "T6_MILK": 6}}, "Pegajosa Mayor (T8)": {"id": "T8_POTION_SLOWFIELD", "rama": "Pegajosa", "foco": 6000, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T5_TEASEL": 36, "T8_MILK": 18, "T8_ALCOHOL": 18}},
+        "Resistencia Menor (T3)": {"id": "T3_POTION_STONESKIN", "rama": "Resistencia", "foco": 600, "mats": {"T3_COMFREY": 24}}, "Resistencia (T5)": {"id": "T5_POTION_STONESKIN", "rama": "Resistencia", "foco": 2000, "mats": {"T5_TEASEL": 24, "T3_COMFREY": 12}}, "Resistencia Mayor (T7)": {"id": "T7_POTION_STONESKIN", "rama": "Resistencia", "foco": 4600, "mats": {"T7_MULLEIN": 72, "T6_FOXGLOVE": 36, "T5_EGG": 18, "T7_ALCOHOL": 18}},
+        "Gigantismo Menor (T3)": {"id": "T3_POTION_REVIVE", "rama": "Gigantismo", "foco": 600, "mats": {"T3_COMFREY": 24}}, "Gigantismo (T5)": {"id": "T5_POTION_REVIVE", "rama": "Gigantismo", "foco": 2000, "mats": {"T5_TEASEL": 24, "T3_COMFREY": 12}}, "Gigantismo Mayor (T7)": {"id": "T7_POTION_REVIVE", "rama": "Gigantismo", "foco": 4600, "mats": {"T7_MULLEIN": 72, "T6_FOXGLOVE": 36, "T5_EGG": 18, "T7_ALCOHOL": 18}},
         "Invisibilidad (T8)": {"id": "T8_POTION_INVIS_1", "rama": "Invisibilidad", "foco": 6000, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T8_ALCOHOL": 18}},
-        "Recolección Menor (T4)": {"id": "T4_POTION_GATHER", "rama": "Recolección", "foco": 1500, "mats": {"T4_ALCHEMICAL_EXTRACT": 10, "T4_BUTTER": 16, "T3_RUNESTONE_TOOTH": 1}},
-        "Recolección (T6)": {"id": "T6_POTION_GATHER", "rama": "Recolección", "foco": 3000, "mats": {"T6_ALCHEMICAL_EXTRACT": 10, "T6_BUTTER": 16, "T5_RUNESTONE_TOOTH": 1}},
-        "Recolección Mayor (T8)": {"id": "T8_POTION_GATHER", "rama": "Recolección", "foco": 4500, "mats": {"T8_ALCHEMICAL_EXTRACT": 10, "T8_BUTTER": 16, "T7_RUNESTONE_TOOTH": 1}},
-        "Berserker (T8)": {"id": "T8_POTION_BERSERK", "rama": "Berserker", "foco": 6000, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T8_ALCHEMICAL_EXTRACT": 1, "T8_RUNESTONE_TOOTH": 1}},
-        "Ácido (T8)": {"id": "T8_POTION_ACID", "rama": "Ácido", "foco": 6000, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T8_ALCHEMICAL_EXTRACT": 1, "T8_RUNESTONE_BONE": 1}},
-        "Tornado (T8)": {"id": "T8_POTION_TORNADO", "rama": "Tornado", "foco": 6000, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T8_ALCHEMICAL_EXTRACT": 1, "T8_RUNESTONE_CLAW": 1}},
-        "Fuego Infernal (T8)": {"id": "T8_POTION_HELL", "rama": "Fuego Infernal", "foco": 6000, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T8_ALCHEMICAL_EXTRACT": 1, "T8_RUNESTONE_FEATHER": 1}},
-        "Limpieza (T8)": {"id": "T8_POTION_CLEANSE", "rama": "Limpieza", "foco": 6000, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T8_ALCHEMICAL_EXTRACT": 1, "T8_RUNESTONE_BEAK": 1}}
+        "Recolección Menor (T4)": {"id": "T4_POTION_GATHER", "rama": "Recolección", "foco": 1500, "mats": {"T4_ALCHEMICAL_EXTRACT": 10, "T4_BUTTER": 16, "T3_RUNESTONE_TOOTH": 1}}, "Recolección (T6)": {"id": "T6_POTION_GATHER", "rama": "Recolección", "foco": 3000, "mats": {"T6_ALCHEMICAL_EXTRACT": 10, "T6_BUTTER": 16, "T5_RUNESTONE_TOOTH": 1}}, "Recolección Mayor (T8)": {"id": "T8_POTION_GATHER", "rama": "Recolección", "foco": 4500, "mats": {"T8_ALCHEMICAL_EXTRACT": 10, "T8_BUTTER": 16, "T7_RUNESTONE_TOOTH": 1}},
+        "Berserker (T8)": {"id": "T8_POTION_BERSERK", "rama": "Berserker", "foco": 6000, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T8_ALCHEMICAL_EXTRACT": 1, "T8_RUNESTONE_TOOTH": 1}}, "Ácido (T8)": {"id": "T8_POTION_ACID", "rama": "Ácido", "foco": 6000, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T8_ALCHEMICAL_EXTRACT": 1, "T8_RUNESTONE_BONE": 1}}, "Tornado (T8)": {"id": "T8_POTION_TORNADO", "rama": "Tornado", "foco": 6000, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T8_ALCHEMICAL_EXTRACT": 1, "T8_RUNESTONE_CLAW": 1}}, "Fuego Infernal (T8)": {"id": "T8_POTION_HELL", "rama": "Fuego Infernal", "foco": 6000, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T8_ALCHEMICAL_EXTRACT": 1, "T8_RUNESTONE_FEATHER": 1}}, "Limpieza (T8)": {"id": "T8_POTION_CLEANSE", "rama": "Limpieza", "foco": 6000, "mats": {"T8_YARROW": 72, "T7_MULLEIN": 36, "T8_ALCHEMICAL_EXTRACT": 1, "T8_RUNESTONE_BEAK": 1}}
     },
     "esencias": {1: "ARCANEM_EXTRACT_LOW", 2: "ARCANEM_EXTRACT_MEDIUM", 3: "ARCANEM_EXTRACT_HIGH"},
     "ramas": ["Curación", "Energía", "Gigantismo", "Resistencia", "Pegajosa", "Invisibilidad", "Veneno", "Limpieza", "Ácido", "Calmante", "Recolección", "Fuego Infernal", "Berserker", "Tornado", "Destilados"],
@@ -231,7 +207,64 @@ with t3:
 # --- MÓDULO 4: ESCÁNER ---
 with t4:
     st.header("📊 Escáner de Mercado")
-    cat = st.radio("¿Qué deseas escanear?", ["Pociones", "Ingredientes", "Artefactos/Restos", "Semillas"], horizontal=True)
+    
+    # RADAR DE OPORTUNIDADES
+    with st.expander("📡 RADAR DE OPORTUNIDADES (TOP 10 RENTABILIDAD)", expanded=False):
+        st.write("Escanea la rentabilidad base simulando un crafteo de 100 pociones en Brecilien.")
+        if st.button("Lanzar Radar Global", type="primary"):
+            with st.spinner("Simulando cientos de crafteos..."):
+                ids_totales = set()
+                for rec in DB["recetas"].values():
+                    for enc in [0, 1, 2]:
+                        ids_totales.add(f"{rec['id']}@{enc}" if enc > 0 else rec['id'])
+                        for m in rec["mats"].keys(): ids_totales.add(m)
+                        if enc > 0: ids_totales.add(f"T{rec['id'][1:2]}_{DB['esencias'][enc]}")
+                
+                datos_radar = get_p(list(ids_totales))
+                resultados_radar = []
+                
+                for p_name, rec in DB["recetas"].items():
+                    es_rec = "GATHER" in rec["id"]
+                    salida = 10 if es_rec else 5
+                    cics = math.ceil(100 / salida)
+                    
+                    for enc in [0, 1, 2]:
+                        id_f = f"{rec['id']}@{enc}" if enc > 0 else rec['id']
+                        pv_api = datos_radar.get(id_f, {}).get("Brecilien", {}).get("s", 0)
+                        if pv_api == 0: continue
+                        
+                        valido, coste_sf, coste_cf = True, 0, 0
+                        for m, qb in rec["mats"].items():
+                            c_min = min([d['s'] for d in datos_radar.get(m, {}).values() if d['s'] > 0], default=0)
+                            if c_min == 0: valido = False; break
+                            coste_sf += math.ceil((qb * cics) * (1 - 0.248)) * c_min
+                            coste_cf += math.ceil((qb * cics) * (1 - 0.482)) * c_min
+                            
+                        if enc > 0 and valido:
+                            id_es = f"T{rec['id'][1:2]}_{DB['esencias'][enc]}"
+                            c_min_es = min([d['s'] for d in datos_radar.get(id_es, {}).values() if d['s'] > 0], default=0)
+                            if c_min_es == 0: valido = False
+                            else:
+                                coste_sf += math.ceil((salida * cics) * (1 - 0.248)) * c_min_es
+                                coste_cf += math.ceil((salida * cics) * (1 - 0.482)) * c_min_es
+                        
+                        if valido:
+                            ingreso = 100 * pv_api * (1 - tax_v - s_fee)
+                            resultados_radar.append({
+                                "Poción": f"{p_name} .{enc}",
+                                "Neto (Foco)": int(ingreso - coste_cf),
+                                "Neto (Sin Foco)": int(ingreso - coste_sf)
+                            })
+                
+                if resultados_radar:
+                    resultados_radar = sorted(resultados_radar, key=lambda x: x["Neto (Foco)"], reverse=True)[:10]
+                    st.dataframe(resultados_radar, use_container_width=True)
+                else:
+                    st.error("No se han podido cruzar datos suficientes de la API en este momento.")
+
+    st.markdown("---")
+    
+    cat = st.radio("¿Qué deseas escanear manualmente?", ["Pociones", "Ingredientes", "Artefactos/Restos", "Semillas"], horizontal=True)
     item_id = ""
     if cat == "Pociones":
         c_p1, c_p2 = st.columns(2)
