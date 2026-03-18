@@ -78,11 +78,11 @@ with t1:
             if bono > 1: st.success(f"✅ Bono Activo en {ciu_c}")
             st.info(f"🛒 Semillas baratas: {cc_o} | 📍 Vender en: {cv_o}")
             with t2:
-    st.header("Calculadora Alquimia Terminal")
-    p_sel = st.selectbox("Poción:", list(ALBION_DB["recetas"].keys()))
-    e_sel = st.selectbox("Encantamiento:", [0, 1, 2, 3])
-    rec = ALBION_DB["recetas"][p_sel]
-    col_a, col_b = st.columns([2, 1])
+        st.header("Calculadora Alquimia Terminal")
+        p_sel = st.selectbox("Poción:", list(ALBION_DB["recetas"].keys()))
+        e_sel = st.selectbox("Encantamiento:", [0, 1, 2, 3])
+        rec = ALBION_DB["recetas"][p_sel]
+        col_a, col_b = st.columns([2, 1])
     with col_b:
         cant = st.number_input("Cantidad:", min_value=5, step=5, value=100)
         f_check = st.checkbox("Usar Foco", value=True)
