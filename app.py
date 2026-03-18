@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 import math
 
-# --- 1. BASE DE DATOS MAESTRA (ALBION EUROPA) ---
+# --- 1. BASE DE DATOS MAESTRA ---
 DB = {
     "hierbas": {
         "T2_AGARIC": {"seed": "T2_FARM_AGARIC_SEED", "ret": 0.333},
@@ -99,7 +99,6 @@ with t1:
     st.header("Gestión Agrícola")
     num_islas = st.number_input("¿Cuántas islas quieres gestionar?", 1, 5, 1)
     
-    # Reiniciar inventario para recalcular
     st.session_state['inventario_islas'] = {h: 0 for h in DB["hierbas"].keys()}
     total_neto_islas = 0
     
@@ -130,59 +129,81 @@ with t1:
 
 # --- MÓDULO 2: ALQUIMIA ---
 with t2:
-    st.header("Crafteo de Precisión")
+    st.header("Crafteo de Precisión Híbrido")
     p_sel = st.selectbox("Poción a fabricar:", list(DB["recetas"].keys()))
     e_sel = st.selectbox("Encantamiento:", [0, 1, 2, 3])
     rec = DB["recetas"][p_sel]
     
     es_rec = "GATHER" in rec["id"]
     salida_por_ciclo = 10 if es_rec else 5
-    
-    # Lógica de autocompletado con inventario de granja
-    ingrediente_principal = list(rec["mats"].keys())[0] # Asumimos que el primero es la hierba principal
-    stock_disponible = st.session_state['inventario_islas'].get(ingrediente_principal, 0)
+    ing_pr = list(rec["mats"].keys())[0]
+    stock_disp = st.session_state['inventario_islas'].get(ing_pr, 0)
+    req_pr = rec["mats"][ing_pr]
     
     col_a, col_b = st.columns([2, 1])
     with col_b:
         usar_granja = st.checkbox("🔄 Calcular máximo desde mi Granja", value=False)
-        if usar_granja:
-            req_principal = rec["mats"][ingrediente_principal]
-            ciclos_posibles = stock_disponible // req_principal if req_principal > 0 else 0
-            cant_default = max(salida_por_ciclo, ciclos_posibles * salida_por_ciclo)
-            st.info(f"Tienes {stock_disponible} {ingrediente_principal}. Da para {cant_default} pociones.")
+        opt_foco = st.checkbox("🎯 Optimizar Foco Diario (Max 10k)", value=True)
+        
+        f_est = calc_foco(rec['foco'], rec['rama'])
+        foco_real_input = st.number_input("Foco por Click:", value=int(f_est)) if opt_foco else 0
+        
+        # MOTOR DE SIMULACIÓN EN CASCADA
+        if usar_granja and stock_disp >= req_pr:
+            stock_sim = stock_disp
+            c_f = 0
+            c_sf = 0
+            max_cf = math.floor(10000 / foco_real_input) if opt_foco and foco_real_input > 0 else 0
+            
+            while stock_sim >= req_pr:
+                if c_f < max_cf:
+                    stock_sim -= req_pr
+                    stock_sim += math.floor(req_pr * 0.482)
+                    c_f += 1
+                else:
+                    stock_sim -= req_pr
+                    stock_sim += math.floor(req_pr * 0.248)
+                    c_sf += 1
+                    
+            cant_default = (c_f + c_sf) * salida_por_ciclo
+            st.info(f"🌿 Tus {stock_disp} hierbas rinden para **{cant_default}** pociones totales:\n\n✨ {c_f * salida_por_ciclo} con Foco\n🔨 {c_sf * salida_por_ciclo} sin Foco")
         else:
             cant_default = 100
 
         cant = st.number_input("Cantidad de pociones:", min_value=salida_por_ciclo, step=salida_por_ciclo, value=int(cant_default))
-        f_check = st.checkbox("Usar Foco", value=True)
         t_nutri = st.number_input("Coste Nutrición total:", value=400)
-        
-        f_est = calc_foco(rec['foco'], rec['rama'])
-        foco_real_input = st.number_input("Foco por Click:", value=int(f_est)) if f_check else 0
 
+    # REPARTO DE COSTES MATEMÁTICO
+    ciclos_totales = math.ceil(cant / salida_por_ciclo)
+    max_c_foco = math.floor(10000 / foco_real_input) if opt_foco and foco_real_input > 0 else 0
+    c_foco = min(ciclos_totales, max_c_foco)
+    c_sfoco = ciclos_totales - c_foco
+    
     id_f = f"{rec['id']}@{e_sel}" if e_sel > 0 else rec['id']
     ids_pedir = [id_f] + list(rec["mats"].keys())
     if e_sel > 0: ids_pedir.append(f"T{rec['id'][1:2]}_{DB['esencias'][e_sel]}")
     pg_a = get_p(ids_pedir)
     
-    coste_mats = 0
-    rrr = 0.482 if f_check else 0.248
-    ciclos = math.ceil(cant / salida_por_ciclo)
-    
     with col_a:
         st.subheader("Ajuste Manual de Costes (0 si usas tu stock)")
+        coste_mats = 0
         for m, qb in rec["mats"].items():
             p_api = pg_a.get(m, {}).get("Brecilien", {}).get("s", 0)
-            # Si marcaste usar granja y es una hierba que tienes, autocompleta con 0
-            precio_defecto = 0 if (usar_granja and m in DB["hierbas"]) else int(p_api)
-            p_real = st.number_input(f"Coste {m} (Mercado: {p_api:,})", value=precio_defecto, key=f"mat_alq_{m}")
-            coste_mats += (math.ceil((qb * ciclos) * (1 - rrr)) * p_real)
+            p_def = 0 if (usar_granja and m in DB["hierbas"]) else int(p_api)
+            p_real = st.number_input(f"Coste {m} (Mercado: {p_api:,})", value=p_def, key=f"mat_alq_{m}")
+            
+            gasto_f = math.ceil((qb * c_foco) * (1 - 0.482))
+            gasto_sf = math.ceil((qb * c_sfoco) * (1 - 0.248))
+            coste_mats += (gasto_f + gasto_sf) * p_real
             
         if e_sel > 0:
             id_es = f"T{rec['id'][1:2]}_{DB['esencias'][e_sel]}"
             p_es = pg_a.get(id_es, {}).get("Brecilien", {}).get("s", 0)
             p_es_real = st.number_input(f"Coste Esencia (Mercado: {p_es:,})", value=int(p_es), key=f"mat_es_{id_es}")
-            coste_mats += (math.ceil((salida_por_ciclo * ciclos) * (1 - rrr)) * p_es_real)
+            
+            gasto_f_es = math.ceil((salida_por_ciclo * c_foco) * (1 - 0.482))
+            gasto_sf_es = math.ceil((salida_por_ciclo * c_sfoco) * (1 - 0.248))
+            coste_mats += (gasto_f_es + gasto_sf_es) * p_es_real
             
         pv_api = pg_a.get(id_f, {}).get("Brecilien", {}).get("s", 0)
         st.divider()
@@ -190,24 +211,22 @@ with t2:
         
         ben_alq = (cant * pv_real * (1 - tax_v - s_fee)) - (coste_mats + t_nutri)
         st.success(f"### Beneficio Limpio: {ben_alq:,.0f} silver")
+        if opt_foco: 
+            st.info(f"⚙️ Estructura de producción: **{c_foco} ciclos** con Foco ({c_foco * foco_real_input:,} pts) y **{c_sfoco} ciclos** sin Foco.")
 
 # --- MÓDULO 3: BALANCE TOTAL ---
 with t3:
     st.header("⚖️ Balance Global del Imperio")
-    st.write("Visión pura de tu flujo de caja: todo lo que vendes menos todo lo que te cuesta (semillas, nutrición, ingredientes extra).")
+    st.write("Flujo de caja absoluto: ventas de pociones generadas menos el coste del imperio entero (semillas, nutrición, etc).")
     
-    # Sumar costes de semillas gastados en Pestaña 1
-    coste_total_semillas = sum([math.ceil(st.session_state[f"parc_{i}"] * 9 * (1 - DB["hierbas"][st.session_state[f"hie_{i}"]]["ret"])) * st.session_state[f"ps_man_{i}"] for i in range(int(num_islas)) if f"parc_{i}" in st.session_state])
+    coste_sem = sum([math.ceil(st.session_state[f"parc_{i}"] * 9 * (1 - DB["hierbas"][st.session_state[f"hie_{i}"]]["ret"])) * st.session_state[f"ps_man_{i}"] for i in range(int(num_islas)) if f"parc_{i}" in st.session_state])
     
-    st.markdown(f"**Gasto Diario en Semillas:** {coste_total_semillas:,.0f} silver")
-    st.markdown(f"**Beneficio Alquimia (Pestaña 2):** {ben_alq:,.0f} silver")
+    st.markdown(f"**Gasto Diario en Semillas:** {coste_sem:,.0f} silver")
+    st.markdown(f"**Beneficio Alquimia Híbrida:** {ben_alq:,.0f} silver")
+    balance_final = ben_alq - coste_sem
     
-    balance_final = ben_alq - coste_total_semillas
-    
-    if balance_final > 0:
-        st.success(f"💸 **TU IMPERIO CRECE.** Ganancia neta absoluta: **{balance_final:,.0f} silver diarios**. Estás subiendo specs y ganando plata real.")
-    else:
-        st.error(f"📉 **PÉRDIDAS DETECTADAS.** Balance negativo de **{abs(balance_final):,.0f} silver**. Revisa el precio de la poción o no craftees sin foco hoy.")
+    if balance_final > 0: st.success(f"💸 **IMPERIO RENTABLE.** Ganancia neta absoluta: **{balance_final:,.0f} silver diarios**.")
+    else: st.error(f"📉 **PÉRDIDAS DETECTADAS.** Balance negativo de **{abs(balance_final):,.0f} silver**.")
 
 # --- MÓDULO 4: ESCÁNER ---
 with t4:
