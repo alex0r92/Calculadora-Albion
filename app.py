@@ -159,4 +159,4 @@ with t2:
         
         beneficio_alq = (cant * pv_man * (1 - tax_v - s_fee)) - (coste_mats + t_nutri)
         st.success(f"### Beneficio Neto: {beneficio_alq:,.0f} silver")
-        if foco: st.info(f"💡 Foco necesario: {calcular_foco(rec['foco'], rec['rama
+        if foco: st.info(f"💡 Foco necesario: {calcular_foco(rec['foco'], rec['rama']) * ciclos:,.0f} pts")
