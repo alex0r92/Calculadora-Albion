@@ -39,7 +39,6 @@ ALBION_DB = {
     "bonos": {"Lymhurst": ["T4_BURDOCK"], "Martlock": ["T6_FOXGLOVE"], "Thetford": ["T7_MULLEIN", "T2_AGARIC"]}
 }
 
-# --- 2. MOTORES DE CONEXIÓN A LA API ---
 @st.cache_data(ttl=60)
 def get_p(ids):
     c = "Martlock,Caerleon,Lymhurst,Bridgewatch,Thetford,Fort_Sterling,Brecilien"
@@ -49,27 +48,13 @@ def get_p(ids):
         res = {}
         for it in data:
             ciu, item = it['city'].replace(" ", "_"), it['item_id']
-            if it['sell_price_min'] > 0 or it['buy_price_max'] > 0:
+            if it['sell_price_min'] > 0:
                 if item not in res: res[item] = {}
                 res[item][ciu] = {"s": it['sell_price_min'], "b": it['buy_price_max']}
         return res
     except: return {}
 
-@st.cache_data(ttl=300)
-def get_h(item_id):
-    c = "Martlock,Caerleon,Lymhurst,Bridgewatch,Thetford,Fort_Sterling,Brecilien"
-    url = f"https://www.albion-online-data.com/api/v2/stats/history/{item_id}?locations={c}&time-scale=24"
-    try:
-        data = requests.get(url, timeout=10).json()
-        res = {}
-        for d in data:
-            ciu = d['location'].replace(" ", "_")
-            if d.get('data') and len(d['data']) > 0:
-                res[ciu] = d['data'][-1]['item_count']
-        return res
-    except: return {}
-
-# --- 3. CONFIGURACIÓN Y PERFIL ---
+# --- 2. CONFIGURACIÓN Y PERFIL ---
 st.set_page_config(page_title="Albion Terminal Pro", layout="wide")
 st.sidebar.header("Tus Specs (0-100)")
 premium = st.sidebar.checkbox("Premium", value=True)
@@ -87,33 +72,28 @@ def calcular_foco(f_base, rama_p):
         if r != rama_p: pts += (lvl * 18)
     return f_base * (0.5 ** (pts / 10000))
 
-t1, t2, t3, t4 = st.tabs(["🌱 1. Cultivos", "🧪 2. Alquimia", "📈 3. Estrategia", "📊 4. Escáner"])
+t1, t2, t3, t4 = st.tabs(["🌱 Cultivos", "🧪 Alquimia", "📈 Estrategia", "📊 Escáner"])
 
-# --- MÓDULO 1: CULTIVOS ---
+# --- 3. MÓDULO 1: CULTIVOS ---
 with t1:
-    st.header("Análisis de Granja Multi-Isla")
-    num_islas = st.number_input("¿Cuántas islas quieres gestionar?", min_value=1, max_value=5, value=1)
-    
-    beneficio_total_granjas = 0
-    
-    for i in range(int(num_islas)):
-        st.markdown(f"### 🏝️ Isla {i+1}")
-        c1, c2, c3 = st.columns(3)
-        # Añadimos key=... para que Streamlit no confunda los botones de cada isla
-        with c1: ciu_c = st.selectbox("Ubicación:", ["Martlock", "Caerleon", "Lymhurst", "Bridgewatch", "Thetford", "Fort_Sterling", "Brecilien"], key=f"ciu_{i}")
-        with c2: hie_e = st.selectbox("Planta:", list(ALBION_DB["hierbas"].keys()), key=f"hie_{i}")
-        with c3: parc = st.number_input("Nº Parcelas:", min_value=1, value=10, key=f"parc_{i}")
-        
+    st.header("Análisis de Granja y Reposición")
+    c1, c2, c3 = st.columns(3)
+    with c1: ciu_c = st.selectbox("Isla en:", ["Martlock", "Caerleon", "Lymhurst", "Bridgewatch", "Thetford", "Fort_Sterling", "Brecilien"])
+    with c2: hie_e = st.selectbox("Planta:", list(ALBION_DB["hierbas"].keys()))
+    with c3: parc = st.number_input("Nº Parcelas:", min_value=1, value=10)
+
+    if st.button("Escanear Mercados y Calcular"):
         info = ALBION_DB["hierbas"][hie_e]
         pg = get_p([hie_e, info["seed"]])
-        
         if pg:
             tiene_bono = hie_e in ALBION_DB["bonos"].get(ciu_c, [])
             bono = 1.1 if tiene_bono else 1.0
+            
             h_tot = parc * 9
             cosecha_est = math.floor(h_tot * 9 * bono)
             s_perd = math.ceil(h_tot * (1 - info["ret"]))
             
+            # Mercados
             m_h = pg.get(hie_e, {})
             c_v_opt = max(m_h, key=lambda k: m_h[k]['s']) if m_h else ciu_c
             p_v_opt = m_h.get(c_v_opt, {}).get('s', 0)
@@ -122,25 +102,32 @@ with t1:
             c_s_opt = min(m_s, key=lambda k: m_s[k]['s']) if m_s else ciu_c
             p_s_opt = m_s.get(c_s_opt, {}).get('s', 0)
             
+            # Finanzas
             ing_bruto = cosecha_est * p_v_opt
             coste_repo = s_perd * p_s_opt
             ing_neto = ing_bruto * (1 - tax_v - s_fee)
-            neto_isla = ing_neto - coste_repo
-            beneficio_total_granjas += neto_isla
+            beneficio_real = ing_neto - coste_repo
             
-            col_res1, col_res2 = st.columns([1, 2])
-            with col_res1:
-                st.metric(f"Beneficio (Isla {i+1})", f"{neto_isla:,.0f} s")
-            with col_res2:
-                st.info(f"Vender: {c_v_opt} ({p_v_opt}s) | Semillas: {c_s_opt} ({p_s_opt}s)")
-                if tiene_bono: st.success(f"✅ Bono +10% activo en {ciu_c}")
-        st.divider()
-        
-    if num_islas > 1:
-        st.success(f"## 💰 Beneficio Total de tus {num_islas} Islas: {beneficio_total_granjas:,.0f} silver")
-# --- MÓDULO 2: ALQUIMIA ---
+            if tiene_bono:
+                st.success(f"✅ **Bono Activo:** {ciu_c} tiene +10% de producción.")
+            else:
+                st.warning(f"⚠️ **Sin Bono** en {ciu_c}.")
+                
+            st.metric("Beneficio Neto (Tras Reposición e Impuestos)", f"{beneficio_real:,.0f} silver")
+            
+            col_inf1, col_inf2 = st.columns(2)
+            with col_inf1:
+                st.info(f"📈 **Venta Óptima:** {c_v_opt} ({p_v_opt}s/ud)")
+                with st.expander("Precios Hierba (Ciudades)"):
+                    for c, d in m_h.items(): st.write(f"{c}: {d['s']}s")
+            with col_inf2:
+                st.error(f"🛒 **Compra Semillas:** {c_s_opt} ({p_s_opt}s/ud)")
+                with st.expander("Precios Semillas (Ciudades)"):
+                    for c, d in m_s.items(): st.write(f"{c}: {d['s']}s")
+
+# --- 4. MÓDULO 2: ALQUIMIA ---
 with t2:
-    st.header("Alquimia Pro (Precios Rápidos)")
+    st.header("Escáner de Alquimia Pro")
     p_sel = st.selectbox("Poción a Fabricar:", list(ALBION_DB["recetas"].keys()))
     e_sel = st.selectbox("Encantamiento:", [0, 1, 2, 3])
     rec = ALBION_DB["recetas"][p_sel]
@@ -149,11 +136,13 @@ with t2:
     with col_b:
         cant = st.number_input("Cantidad a fabricar:", min_value=5, step=5, value=100)
         foco = st.checkbox("Usar Foco", value=True)
-        t_nutri = st.number_input("Tasa Nutrición total:", value=400)
+        t_nutri = st.number_input("Tasa Nutrición:", value=400)
         
     id_final = f"{rec['id']}@{e_sel}" if e_sel > 0 else rec['id']
     ids_pedir = [id_final] + list(rec["mats"].keys())
-    if e_sel > 0: ids_pedir.append(f"T{rec['id'][1:2]}_{ALBION_DB['esencias'][e_sel]}")
+    if e_sel > 0: 
+        tier = rec['id'][1:2]
+        ids_pedir.append(f"T{tier}_{ALBION_DB['esencias'][e_sel]}")
         
     pg_alq = get_p(ids_pedir)
     
@@ -162,75 +151,52 @@ with t2:
         rrr = 0.482 if foco else 0.248
         ciclos = math.ceil(cant / 5)
         
+        st.subheader("Coste de Materiales")
         for m, qb in rec["mats"].items():
             m_p = pg_alq.get(m, {})
             c_opt = min(m_p, key=lambda x: m_p[x]['s']) if m_p else "N/A"
             p_opt = m_p.get(c_opt, {}).get('s', 0)
-            p_in = st.number_input(f"{m} (Mejor: {p_opt}s en {c_opt})", value=int(p_opt), key=f"mat_{m}")
-            coste_mats += (math.ceil((qb * ciclos) * (1 - rrr)) * p_in)
             
+            p_in = st.number_input(f"{m} (Mejor: {p_opt}s en {c_opt})", value=int(p_opt), key=f"mat_{m}")
+            qr = math.ceil((qb * ciclos) * (1 - rrr))
+            coste_mats += (qr * p_in)
+            
+        st.divider()
         pv_api = pg_alq.get(id_final, {}).get("Brecilien", {}).get("s", 0)
-        pv_man = st.number_input(f"Precio Venta sugerido ({id_final}):", value=int(pv_api))
+        pv_man = st.number_input(f"Precio Venta en Brecilien (Sugerido: {pv_api}s)", value=int(pv_api))
         
-        beneficio_alq = (cant * pv_man * (1 - tax_v - s_fee)) - (coste_mats + t_nutri)
+        beneficio_alq = (cant * pv_man * (1 - tax_v - s_fee)) - (coste_mats + (t_nutri * ciclos))
         st.success(f"### Beneficio Neto: {beneficio_alq:,.0f} silver")
-        if foco: st.info(f"💡 Foco necesario: {calcular_foco(rec['foco'], rec['rama']) * ciclos:,.0f} pts")
+        if foco: 
+            st.info(f"💡 Foco necesario: {calcular_foco(rec['foco'], rec['rama']) * ciclos:,.0f} pts")
+
+# --- 5. MÓDULO 3: ESTRATEGIA ---
 with t3:
     st.header("Logística Cruzada")
-    st.write("Calcula el ahorro real de usar tus propios cultivos.")
+    st.write("Calcula el ahorro real de usar tus propios cultivos en lugar de venderlos.")
     if st.button("Calcular Diferencial de Ahorro"):
         mats_propios = [m for m in rec["mats"].keys() if m in ALBION_DB["hierbas"]]
         if not mats_propios:
             st.warning("Esta poción no usa hierbas cultivables.")
         else:
-            ahorro_tot = sum([(math.ceil((rec["mats"][m] * ciclos) * (1 - rrr)) * pg_alq.get(m, {}).get("Brecilien", {}).get("s", 0) * 0.4) for m in mats_propios])
+            ahorro_tot = 0
+            for m in mats_propios:
+                p_m_api = pg_alq.get(m, {}).get("Brecilien", {}).get("s", 0)
+                # Estimamos que tu coste de producción ronda el 60% del PVP (ahorro 40%)
+                ahorro_tot += (math.ceil((rec["mats"][m] * ciclos) * (1 - rrr)) * p_m_api * 0.4)
             st.success(f"Ahorro estimado por producción propia: {ahorro_tot:,.0f} silver")
 
+# --- 6. MÓDULO 4: ESCÁNER ---
 with t4:
-    st.header("📊 Escáner de Mercado Avanzado")
-    st.write("Verifica la liquidez del mercado (Volumen) y las órdenes actuales antes de operar.")
-    
-    categoria = st.radio("¿Qué quieres escanear?", ["Pociones", "Ingredientes", "Semillas"], horizontal=True)
-    item_id_scan = ""
-    
-    if categoria == "Pociones":
-        c_p1, c_p2 = st.columns(2)
-        with c_p1: pocion_sel = st.selectbox("Elige la Poción:", list(ALBION_DB["recetas"].keys()), key="esc_p")
-        with c_p2: encanto_sel = st.selectbox("Nivel de Encantamiento:", [0, 1, 2, 3], key="esc_e")
-        base_id = ALBION_DB["recetas"][pocion_sel]["id"]
-        item_id_scan = f"{base_id}@{encanto_sel}" if encanto_sel > 0 else base_id
-        
-    elif categoria == "Ingredientes":
-        lista_mats = list(ALBION_DB["hierbas"].keys()) + ["T1_ALCOHOL", "T7_ALCOHOL", "T8_ALCOHOL", "T3_EGG", "T5_EGG", "T6_MILK", "T8_ALCHEMICAL_EXTRACT"] + list(ALBION_DB["esencias"].values())
-        item_id_scan = st.selectbox("Elige el Ingrediente:", sorted(list(set(lista_mats))))
-        
-    else:
-        lista_semillas = [v["seed"] for v in ALBION_DB["hierbas"].values()]
-        item_id_scan = st.selectbox("Elige la Semilla:", lista_semillas)
-
-    if st.button("Lanzar Escáner Definitivo", type="primary"):
-        with st.spinner("Consultando precios y volumen..."):
-            p_data = get_p([item_id_scan]).get(item_id_scan, {})
-            v_data = get_h(item_id_scan)
-            
-            if not p_data and not v_data:
-                st.warning(f"Sin datos recientes para {item_id_scan}. Mercado inactivo.")
-            else:
-                ciudades = ["Brecilien", "Caerleon", "Martlock", "Lymhurst", "Bridgewatch", "Thetford", "Fort_Sterling"]
-                for c in ciudades:
-                    p_venta = p_data.get(c, {}).get('s', 0)
-                    p_compra = p_data.get(c, {}).get('b', 0)
-                    volumen = v_data.get(c, 0)
-                    
-                    st.markdown(f"#### 🏙️ {c.replace('_', ' ')}")
-                    col1, col2, col3 = st.columns(3)
-                    col1.metric("Venta (Más barato)", f"{p_venta:,} s" if p_venta > 0 else "Sin Datos")
-                    col2.metric("Orden Compra (Más caro)", f"{p_compra:,} s" if p_compra > 0 else "Sin Datos")
-                    
-                    if volumen == 0:
-                        col3.error("Volumen 24h: 0 (Muerto)")
-                    elif volumen < 50:
-                        col3.warning(f"Volumen 24h: {volumen:,} (Bajo)")
-                    else:
-                        col3.success(f"Volumen 24h: {volumen:,} (Activo)")
-                    st.divider()
+    st.header("Escáner Rápido de Mercados")
+    st.write("Verifica órdenes de compra (Buy Orders) y venta (Sell Orders) para cualquier ítem.")
+    it_scan = st.text_input("ID del Ítem (Ejemplo: T6_POTION_HEAL):", value=rec['id'])
+    if st.button("Lanzar Escáner de Órdenes"):
+        data_sc = get_p([it_scan])
+        if data_sc:
+            st.subheader(f"📊 Mercado para {it_scan}")
+            for ciu, precios in data_sc.get(it_scan, {}).items():
+                st.write(f"**{ciu.replace('_',' ')}**")
+                st.write(f"📈 Venta (Sell): {precios['s']:,} s")
+                st.write(f"📉 Compra (Buy): {precios['b']:,} s")
+                st.divider()
