@@ -53,25 +53,39 @@ with t1:
         info = ALBION_DB["hierbas"][hie_e]
         pg = get_p([hie_e, info["seed"]])
         if pg:
+            # Cálculos de producción
             bono = 1.1 if hie_e in ALBION_DB["bonos"].get(ciu_i, []) else 1.0
             h_tot = parc * 9
             cosecha = math.floor(h_tot * 9 * bono)
             s_perd = math.ceil(h_tot * (1 - info["ret"]))
             
-            # Buscar mejores precios
-            m_h = pg.get(hie_e, {})
-            c_v_o = max(m_h, key=lambda k: m_h[k]['s']) if m_h else ciu_i
-            p_v_o = m_h.get(c_v_o, {}).get('s', 0)
-            
-            m_s = pg.get(info["seed"], {})
+            # 1. Escáner de Semillas (DÓNDE COMPRAR)
+            m_s = {k: v for k, v in pg.get(info["seed"], {}).items() if v['s'] > 0}
             c_c_o = min(m_s, key=lambda k: m_s[k]['s']) if m_s else ciu_i
             p_s_o = m_s.get(c_c_o, {}).get('s', 0)
             
+            # 2. Escáner de Hierbas (DÓNDE VENDER)
+            m_h = {k: v for k, v in pg.get(hie_e, {}).items() if v['s'] > 0}
+            c_v_o = max(m_h, key=lambda k: m_h[k]['s']) if m_h else ciu_i
+            p_v_o = m_h.get(c_v_o, {}).get('s', 0)
+            
+            # Resultados financieros
             ing_n = (cosecha * p_v_o) * (1 - tax_v)
             cost_s = s_perd * p_s_o
+            beneficio = ing_n - cost_s
             
-            st.success(f"### Beneficio Neto: {ing_n - cost_s:,.0f} silver")
-            st.info(f"Retorno semillas: {info['ret']*100:.1f}%")
+            st.success(f"### Beneficio Neto Estimado: {beneficio:,.0f} silver diarios")
+            st.markdown(f"🌱 **Análisis de Producción:** Con un retorno del **{info['ret']*100:.1f}%**, de los {h_tot} huecos plantados, solo recuperas parte de las semillas. Debes reponer **{s_perd}** semillas diarias.")
+
             col_a, col_b = st.columns(2)
-            col_a.metric(f"Vender en {c_v_o}", f"{ing_n:,.0f} s")
-            col_b.metric(f"Semillas en {c_c_o}", f"-{cost_s:,.0f} s")
+            with col_a:
+                st.metric(f"Vender en {c_v_o.replace('_',' ')}", f"{ing_n:,.0f} s", f"A {p_v_o}s/ud")
+                with st.expander("Ver otros mercados de venta"):
+                    for c, d in m_h.items():
+                        if c != c_v_o: st.write(f"**{c.replace('_',' ')}**: {d['s']} s")
+            
+            with col_b:
+                st.metric(f"Semillas en {c_c_o.replace('_',' ')}", f"-{cost_s:,.0f} s", f"A {p_s_o}s/ud")
+                with st.expander("Ver otros precios de semillas"):
+                    for c, d in m_s.items():
+                        if c != c_c_o: st.write(f"**{c.replace('_',' ')}**: {d['s']} s")
