@@ -78,18 +78,23 @@ with t1:
             if bono > 1: st.success(f"✅ Bono Activo en {ciu_c}")
             st.info(f"🛒 Semillas baratas: {cc_o} | 📍 Vender en: {cv_o}")
             with t2:
-        st.header("Calculadora Alquimia Terminal")
-        p_sel = st.selectbox("Poción:", list(ALBION_DB["recetas"].keys()))
-        e_sel = st.selectbox("Encantamiento:", [0, 1, 2, 3])
-        rec = ALBION_DB["recetas"][p_sel]
-        col_a, col_b = st.columns([2, 1])
+    st.header("Calculadora Alquimia Terminal")
+    p_sel = st.selectbox("Poción:", list(ALBION_DB["recetas"].keys()))
+    e_sel = st.selectbox("Encantamiento:", [0, 1, 2, 3])
+    rec = ALBION_DB["recetas"][p_sel]
+    col_a, col_b = st.columns([2, 1])
+    
     with col_b:
         cant = st.number_input("Cantidad:", min_value=5, step=5, value=100)
         f_check = st.checkbox("Usar Foco", value=True)
+    
     id_f = f"{rec['id']}@{e_sel}" if e_sel > 0 else rec['id']
     ids_pedir = [id_f] + list(rec["mats"].keys())
-    if e_sel > 0: ids_pedir.append(f"T{rec['id'][1:2]}_{ALBION_DB['esencias'][e_sel]}")
+    if e_sel > 0: 
+        ids_pedir.append(f"T{rec['id'][1:2]}_{ALBION_DB['esencias'][e_sel]}")
+    
     pg_a = get_p(ids_pedir)
+    
     with col_a:
         coste_m = 0; rrr = 0.482 if f_check else 0.248; cic = math.ceil(cant / 5)
         for m, qb in rec["mats"].items():
@@ -99,11 +104,13 @@ with t1:
             p_in = st.number_input(f"Precio {m} (Brecilien: {ps})", value=int(ps), key=f"al_{m}")
             qr = math.ceil((qb * cic) * (1 - rrr))
             coste_m += (qr * p_in)
+            
         pv_api = pg_a.get(id_f, {}).get("Brecilien", {}).get("s", 0)
         pv_man = st.number_input(f"Precio Venta API: {pv_api}", value=int(pv_api))
         benef = (cant * pv_man * (1 - tax_v - s_fee)) - coste_m
         st.success(f"Beneficio Neto: {benef:,.0f} s")
-        if f_check: st.info(f"Foco necesario: {calcular_foco(rec['foco'], rec['rama']) * cic:,.0f} pts")
+        if f_check: 
+            st.info(f"Foco necesario: {calcular_foco(rec['foco'], rec['rama']) * cic:,.0f} pts")
 
 with t3:
     st.header("Estrategia Cruzada")
@@ -117,10 +124,10 @@ with t3:
         st.success(f"Ahorro estimado por producción propia: {ahorro:,.0f} silver")
 
 with t4:
-    st.header("📊 Escáner de Mercado Detallado")
-    item_scan = st.text_input("ID del Ítem (Ej: T6_POTION_HEAL):", value=rec['id'])
-    if st.button("Escanear Órdenes"):
+    st.header("📊 Escáner de Mercado")
+    item_scan = st.text_input("ID del Ítem:", value=rec['id'])
+    if st.button("Escanear"):
         data_scan = get_p([item_scan])
         if data_scan:
             for ciu, precios in data_scan.get(item_scan, {}).items():
-                st.write(f"**{ciu}** | Venta: {precios['s']:,} s | Orden Compra: {precios['b']:,} s")
+                st.write(f"**{ciu.replace('_',' ')}** | Venta: {precios['s']:,} s | Compra: {precios['b']:,} s")
